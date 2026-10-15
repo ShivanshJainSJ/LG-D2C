@@ -80,6 +80,7 @@ def get_quotation_details(
                 "sku": i.sku,
                 "product_name": i.product_name,
                 "description": i.description,
+                "image_url": i.image_url or (i.product.image_url if i.product else None),
                 "unit_price": float(i.unit_price),
                 "quantity": i.quantity,
                 "total_price": float(i.total_price)

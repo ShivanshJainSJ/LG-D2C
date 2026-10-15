@@ -52,6 +52,7 @@ class PricingService:
                 "sku": product.sku,
                 "product_name": product.name,
                 "description": product.description,
+                "image_url": product.image_url,
                 "unit_price": unit_price,
                 "quantity": item_in.quantity,
                 "total_price": line_total

@@ -16,380 +16,745 @@
     }
     body {
       background-color: #ffffff;
-      color: #1a1a1a;
+      color: #111827;
       width: 210mm;
       min-height: 297mm;
-      padding: 12mm 15mm;
+      padding: 10mm 12mm 0mm 12mm;
       position: relative;
-    }
-    /* Header */
-    .header-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-    }
-    .header-logo {
-      vertical-align: middle;
-      width: 50%;
-    }
-    .brand-name {
-      font-size: 28px;
-      font-weight: 900;
-      color: #e31e24;
-      letter-spacing: -0.5px;
-      display: inline-block;
-    }
-    .brand-tagline {
       font-size: 11px;
-      font-weight: 600;
-      color: #4b5563;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-top: 2px;
     }
-    .header-banner {
-      width: 50%;
-      text-align: right;
-      vertical-align: middle;
-    }
-    .banner-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-      color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 4px;
-      border-left: 4px solid #e31e24;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-    /* Title bar */
-    .title-bar {
-      background: #e31e24;
-      color: #ffffff;
-      padding: 8px 16px;
+
+    /* Top Header Section */
+    .header-container {
       display: flex;
       justify-content: space-between;
+      align-items: stretch;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .header-left {
+      width: 52%;
+      padding-top: 6px;
+    }
+    .logo-row {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+    .logo-text-liv {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      font-style: italic;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .logo-text-guard {
+      font-size: 32px;
+      font-weight: 900;
+      color: #111827;
+      font-style: italic;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .logo-tagline {
+      font-size: 11px;
+      font-weight: 700;
+      color: #111827;
+      margin-left: 28px;
+      letter-spacing: 0.2px;
+      margin-bottom: 12px;
+    }
+    .quotation-main-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #111827;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1.1;
+      margin-top: 6px;
+    }
+    .quotation-subtitle {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+
+    /* Top Right Banner */
+    .header-right {
+      width: 48%;
+      position: relative;
+      display: flex;
+      justify-content: flex-end;
       align-items: center;
+      overflow: hidden;
       border-radius: 4px;
-      margin-bottom: 15px;
     }
-    .title-text {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 1px;
-    }
-    .title-meta {
-      font-size: 12px;
-      font-weight: 600;
-    }
-    /* Metadata grid */
-    .meta-grid {
-      display: table;
+    .banner-wrapper {
+      position: relative;
       width: 100%;
-      margin-bottom: 15px;
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      background: #f9fafb;
+      height: 110px;
+      background: linear-gradient(105deg, transparent 0%, transparent 18%, #e31e24 18%, #e31e24 24%, #0c0e12 24%, #0c0e12 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 0 70px;
     }
-    .meta-col {
-      display: table-cell;
-      width: 50%;
+    .banner-img {
+      height: 90px;
+      max-width: 170px;
+      object-fit: contain;
+    }
+    .banner-text-box {
+      text-align: right;
+    }
+    .banner-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.1;
+      text-transform: uppercase;
+    }
+    .banner-tag {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #e31e24;
+      line-height: 1.2;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Customer and Quotation Info Panels */
+    .info-panels-grid {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .info-card {
+      flex: 1;
+      background-color: #f5f6f8;
+      border-radius: 12px;
       padding: 12px 16px;
+    }
+    .info-card-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #e31e24;
+      margin-bottom: 8px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .info-table td {
+      padding: 3px 0;
+      font-size: 10.5px;
       vertical-align: top;
     }
-    .meta-col:first-child {
-      border-right: 1px solid #e5e7eb;
+    .info-table td.label {
+      color: #1f2937;
+      font-weight: 600;
+      width: 110px;
+      white-space: nowrap;
     }
-    .section-heading {
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: #e31e24;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-      border-bottom: 1px solid #fee2e2;
-      padding-bottom: 4px;
+    .info-table td.colon {
+      width: 12px;
+      color: #4b5563;
+      font-weight: 600;
     }
-    .meta-row {
-      font-size: 11.5px;
-      line-height: 1.6;
-      color: #374151;
-    }
-    .meta-row strong {
+    .info-table td.val {
       color: #111827;
-      min-width: 90px;
-      display: inline-block;
+      font-weight: 600;
+      border-bottom: 1px dotted #cbd5e1;
+      padding-bottom: 2px;
     }
-    /* Products Table */
+    .info-table td.val-clean {
+      color: #111827;
+      font-weight: 700;
+    }
+
+    /* Product Table */
+    .table-container {
+      margin-bottom: 14px;
+    }
     .product-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 15px;
+      border: 1px solid #d1d5db;
     }
     .product-table th {
-      background-color: #111827;
+      background-color: #0b0f17;
       color: #ffffff;
       font-size: 10.5px;
       font-weight: 700;
-      text-align: left;
-      padding: 8px 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border: 1px solid #111827;
+      padding: 8px 6px;
+      text-align: center;
+      border-right: 1px solid #2d3748;
     }
-    .product-table th.center { text-align: center; }
-    .product-table th.right { text-align: right; }
+    .product-table th:last-child {
+      border-right: none;
+    }
     .product-table td {
       border: 1px solid #e5e7eb;
-      padding: 8px 10px;
-      font-size: 11px;
+      padding: 8px 8px;
+      font-size: 10.5px;
       vertical-align: middle;
       color: #1f2937;
     }
     .product-table tr:nth-child(even) {
-      background-color: #fcfcfc;
+      background-color: #fafafa;
     }
-    .product-sku {
-      font-family: monospace;
-      font-size: 10px;
-      font-weight: 700;
+    .col-sno { width: 5%; text-align: center; font-weight: 700; }
+    .col-product { width: 18%; text-align: center; }
+    .col-sku { width: 14%; text-align: center; font-weight: 600; color: #374151; font-family: monospace; font-size: 10px; }
+    .col-desc { width: 33%; text-align: left; }
+    .col-qty { width: 6%; text-align: center; font-weight: 700; }
+    .col-price { width: 12%; text-align: right; font-weight: 600; }
+    .col-total { width: 12%; text-align: right; font-weight: 700; color: #111827; }
+
+    .item-thumbnail {
+      max-height: 75px;
+      max-width: 95px;
+      object-fit: contain;
+      display: inline-block;
+    }
+    .desc-title {
+      font-weight: 800;
+      font-size: 11px;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+    .desc-bullets {
+      list-style-type: disc;
+      padding-left: 14px;
+      margin: 0;
+      font-size: 9.5px;
+      color: #374151;
+      line-height: 1.45;
+    }
+    .desc-bullets li {
+      margin-bottom: 1.5px;
+    }
+
+    /* Benefits row & Totals row */
+    .summary-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+      gap: 16px;
+    }
+    .benefits-box {
+      flex: 1;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 4px;
+      background: #ffffff;
+    }
+    .benefit-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 75px;
+    }
+    .benefit-icon-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid #e31e24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
       color: #e31e24;
     }
-    .product-desc {
-      font-size: 10px;
-      color: #6b7280;
-      margin-top: 2px;
+    .benefit-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.2;
     }
-    /* Summary calculation box */
-    .summary-container {
-      width: 100%;
-      margin-bottom: 15px;
-      display: table;
-    }
-    .terms-box {
-      display: table-cell;
-      width: 58%;
-      vertical-align: top;
-      padding-right: 15px;
-    }
+
+    /* Totals Box */
     .totals-box {
-      display: table-cell;
-      width: 42%;
-      vertical-align: top;
+      width: 38%;
+      border: 1px solid #d1d5db;
+      border-collapse: collapse;
     }
     .totals-table {
       width: 100%;
       border-collapse: collapse;
     }
     .totals-table td {
-      padding: 6px 10px;
-      font-size: 11.5px;
-      border-bottom: 1px solid #f3f4f6;
+      padding: 6px 12px;
+      font-size: 11px;
+      border-bottom: 1px solid #e5e7eb;
     }
-    .totals-table td.label {
+    .totals-table td.total-label {
       font-weight: 600;
-      color: #4b5563;
+      color: #374151;
+      text-align: left;
     }
-    .totals-table td.value {
-      text-align: right;
+    .totals-table td.total-value {
       font-weight: 700;
       color: #111827;
+      text-align: right;
     }
     .totals-table tr.grand-total-row {
       background-color: #e31e24;
-      color: #ffffff;
     }
     .totals-table tr.grand-total-row td {
-      padding: 9px 10px;
-      font-size: 14px;
+      color: #ffffff !important;
+      font-size: 13px;
       font-weight: 900;
-      color: #ffffff;
+      padding: 8px 12px;
       border: none;
     }
-    .terms-card {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 4px;
-      padding: 10px 12px;
+
+    /* Terms and Contact / Signatures */
+    .bottom-section {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .terms-col {
+      flex: 1.1;
+      background-color: #f5f6f8;
+      border-radius: 12px;
+      padding: 12px 16px;
     }
     .terms-title {
-      font-size: 10.5px;
+      font-size: 12px;
       font-weight: 800;
-      color: #111827;
-      text-transform: uppercase;
+      color: #e31e24;
       margin-bottom: 6px;
     }
-    .terms-content {
+    .terms-list {
+      padding-left: 14px;
+      font-size: 9px;
+      color: #374151;
+      line-height: 1.45;
+    }
+    .terms-list li {
+      margin-bottom: 2px;
+    }
+
+    .contact-sig-col {
+      flex: 0.9;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .contact-card {
+      background-color: #fbf2f2;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+    }
+    .contact-card-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #e31e24;
+      margin-bottom: 4px;
+    }
+    .contact-card-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: 9.5px;
-      color: #4b5563;
-      line-height: 1.5;
-      white-space: pre-line;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 3px;
     }
-    /* Signatures */
-    .signature-grid {
-      display: table;
-      width: 100%;
-      margin-top: 20px;
-      margin-bottom: 15px;
+    .contact-card-item svg {
+      width: 12px;
+      height: 12px;
+      fill: #e31e24;
+      flex-shrink: 0;
     }
-    .sig-col {
-      display: table-cell;
-      width: 50%;
+
+    .signatures-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 6px;
+    }
+    .sig-block {
+      flex: 1;
       text-align: center;
-      padding: 10px 20px;
     }
     .sig-line {
-      border-top: 1px dashed #9ca3af;
-      margin-top: 40px;
-      padding-top: 6px;
-      font-size: 10.5px;
+      border-bottom: 1px solid #9ca3af;
+      height: 28px;
+      margin-bottom: 4px;
+    }
+    .sig-box {
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      height: 34px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+    .sig-text {
+      font-size: 9.5px;
       font-weight: 700;
       color: #374151;
     }
-    .sig-sub {
-      font-size: 9px;
-      color: #6b7280;
+
+    /* Branded Footer Bar */
+    .brand-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      background: #000000;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: auto;
     }
-    /* Footer */
-    .footer-bar {
-      border-top: 2px solid #e31e24;
-      padding-top: 8px;
-      text-align: center;
-      font-size: 9px;
-      color: #6b7280;
-      line-height: 1.4;
-      background: #ffffff;
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-left: 14px;
+      color: #ffffff;
     }
-    .footer-bar strong {
-      color: #111827;
+    .footer-logo {
+      font-size: 16px;
+      font-weight: 900;
+      font-style: italic;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+    .footer-logo-sub {
+      font-size: 6px;
+      font-weight: 700;
+      font-style: normal;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      margin-top: 1px;
+    }
+    .footer-pill {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 8.5px;
+      font-weight: 700;
+      color: #e5e7eb;
+    }
+    .footer-pill svg {
+      width: 12px;
+      height: 12px;
+      fill: #ffffff;
+    }
+    .footer-right {
+      height: 100%;
+      background: #e31e24;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 0 24px;
+      clip-path: polygon(14px 0, 100% 0, 100% 100%, 0 100%);
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      gap: 6px;
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <table class="header-table">
-    <tr>
-      <td class="header-logo">
-        <div class="brand-name">Livguard</div>
-        <div class="brand-tagline">{{ company.tagline }}</div>
-      </td>
-      <td class="header-banner">
-        <div class="banner-badge">LITHIUM-X & SOLAR SMART SOLUTIONS</div>
-      </td>
-    </tr>
-  </table>
 
-  <!-- Title bar -->
-  <div class="title-bar">
-    <div class="title-text">QUOTATION</div>
-    <div class="title-meta">
-      <strong>No:</strong> {{ quotation_number }} &nbsp;|&nbsp; 
-      <strong>{{ revision_label }}</strong> &nbsp;|&nbsp; 
-      <strong>Date:</strong> {{ issue_date }}
+  <!-- Top Header Section -->
+  <div class="header-container">
+    <div class="header-left">
+      <div class="logo-row">
+        <span class="logo-text-liv">Liv</span><span class="logo-text-guard" style="color: #e31e24;">7</span><span class="logo-text-guard">uard</span>
+      </div>
+      <div class="logo-tagline">Energy Unlimited</div>
+      <div class="quotation-main-title">QUOTATION</div>
+      <div class="quotation-subtitle">Reliable Power Solution for a Brighter Tomorrow</div>
     </div>
-  </div>
-
-  <!-- Customer & Quotation Meta -->
-  <div class="meta-grid">
-    <div class="meta-col">
-      <div class="section-heading">Customer Information</div>
-      <div class="meta-row"><strong>Name:</strong> {{ customer_name }}</div>
-      <div class="meta-row"><strong>Mobile:</strong> {{ customer_mobile }}</div>
-      {% if customer_email %}
-      <div class="meta-row"><strong>Email:</strong> {{ customer_email }}</div>
-      {% endif %}
-      {% if customer_address %}
-      <div class="meta-row"><strong>Address:</strong> {{ customer_address }}</div>
-      {% endif %}
-    </div>
-    <div class="meta-col">
-      <div class="section-heading">Quotation Details</div>
-      <div class="meta-row"><strong>Valid Until:</strong> {{ expiry_date }}</div>
-      <div class="meta-row"><strong>Prepared By:</strong> {{ agent_name }}</div>
-      <div class="meta-row"><strong>Agent Contact:</strong> {{ agent_mobile }}</div>
-      <div class="meta-row"><strong>Tax Status:</strong> {{ tax_policy }}</div>
-    </div>
-  </div>
-
-  <!-- Product Table -->
-  <table class="product-table">
-    <thead>
-      <tr>
-        <th class="center" style="width: 5%;">S.No.</th>
-        <th style="width: 20%;">Product</th>
-        <th style="width: 17%;">SKU / Model No.</th>
-        <th style="width: 28%;">Description</th>
-        <th class="right" style="width: 12%;">Unit Price (₹)</th>
-        <th class="center" style="width: 6%;">Qty.</th>
-        <th class="right" style="width: 12%;">Total Price (₹)</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in items %}
-      <tr>
-        <td class="center">{{ loop.index }}</td>
-        <td><strong>{{ item.product_name }}</strong></td>
-        <td><span class="product-sku">{{ item.sku }}</span></td>
-        <td>
-          <div class="product-desc">{{ item.description or '-' }}</div>
-        </td>
-        <td class="right">{{ "%.2f"|format(item.unit_price) }}</td>
-        <td class="center">{{ item.quantity }}</td>
-        <td class="right">{{ "%.2f"|format(item.total_price) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-  <!-- Summary and Terms -->
-  <div class="summary-container">
-    <div class="terms-box">
-      <div class="terms-card">
-        <div class="terms-title">Terms & Conditions</div>
-        <div class="terms-content">{{ company.terms_conditions }}</div>
+    
+    <div class="header-right">
+      <div class="banner-wrapper">
+        {% if banner_data_uri %}
+        <img src="{{ banner_data_uri }}" alt="Power Backup" class="banner-img">
+        {% else %}
+        <div style="width: 100px; height: 60px;"></div>
+        {% endif %}
+        <div class="banner-text-box">
+          <div class="banner-title">POWER<br>BACKUP</div>
+          <div class="banner-tag">FOR A BRIGHTER<br>TOMORROW</div>
+        </div>
       </div>
     </div>
-    <div class="totals-box">
-      <table class="totals-table">
+  </div>
+
+  <!-- Customer Details & Quotation Info Panels -->
+  <div class="info-panels-grid">
+    <!-- Left Card: Customer Details -->
+    <div class="info-card">
+      <div class="info-card-title">Customer Details</div>
+      <table class="info-table">
         <tr>
-          <td class="label">Subtotal:</td>
-          <td class="value">₹{{ "%.2f"|format(subtotal) }}</td>
+          <td class="label">Customer Name</td>
+          <td class="colon">:</td>
+          <td class="val">{{ customer_name }}</td>
         </tr>
-        {% if discount_amount > 0 %}
         <tr>
-          <td class="label">Coupon Discount {% if coupon_code %}({{ coupon_code }}){% endif %}:</td>
-          <td class="value" style="color: #16a34a;">-₹{{ "%.2f"|format(discount_amount) }}</td>
+          <td class="label">Contact Number</td>
+          <td class="colon">:</td>
+          <td class="val">{{ customer_mobile }}</td>
         </tr>
-        {% endif %}
         <tr>
-          <td class="label">GST ({{ tax_rate }}%):</td>
-          <td class="value">₹{{ "%.2f"|format(tax_amount) }}</td>
+          <td class="label">Address</td>
+          <td class="colon">:</td>
+          <td class="val">{{ customer_address or '-' }}</td>
         </tr>
-        <tr class="grand-total-row">
-          <td class="label" style="color: #ffffff;">Grand Total:</td>
-          <td class="value" style="color: #ffffff;">₹{{ "%.2f"|format(grand_total) }}</td>
+        <tr>
+          <td class="label">Date</td>
+          <td class="colon">:</td>
+          <td class="val">{{ issue_date }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Right Card: Quotation Metadata -->
+    <div class="info-card">
+      <div style="height: 16px;"></div>
+      <table class="info-table">
+        <tr>
+          <td class="label">Quotation No.</td>
+          <td class="colon">:</td>
+          <td class="val-clean">{{ quotation_number }}</td>
+        </tr>
+        <tr>
+          <td class="label">Date</td>
+          <td class="colon">:</td>
+          <td class="val-clean">{{ issue_date }}</td>
+        </tr>
+        <tr>
+          <td class="label">Valid Till</td>
+          <td class="colon">:</td>
+          <td class="val-clean">{{ expiry_date }}</td>
+        </tr>
+        <tr>
+          <td class="label">Prepared By</td>
+          <td class="colon">:</td>
+          <td class="val">{{ agent_name }}</td>
+        </tr>
+        <tr>
+          <td class="label">Contact No.</td>
+          <td class="colon">:</td>
+          <td class="val">{{ agent_mobile }}</td>
         </tr>
       </table>
     </div>
   </div>
 
-  <!-- Signatures -->
-  <div class="signature-grid">
-    <div class="sig-col">
-      <div class="sig-line">Customer Acceptance</div>
-      <div class="sig-sub">Signature & Date</div>
+  <!-- Product Table (Exact Column Order) -->
+  <div class="table-container">
+    <table class="product-table">
+      <thead>
+        <tr>
+          <th class="col-sno">S.No.</th>
+          <th class="col-product">Product</th>
+          <th class="col-sku">SKU / Model No.</th>
+          <th class="col-desc">Description</th>
+          <th class="col-qty">Qty.</th>
+          <th class="col-price">Unit Price<br>(₹)</th>
+          <th class="col-total">Total Price<br>(₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="col-sno">{{ loop.index }}</td>
+          <td class="col-product">
+            {% if item.image_data_uri %}
+            <img src="{{ item.image_data_uri }}" alt="{{ item.product_name }}" class="item-thumbnail">
+            {% else %}
+            <div style="font-size: 10px; color: #9ca3af; font-weight: 600;">{{ item.product_name }}</div>
+            {% endif %}
+          </td>
+          <td class="col-sku">{{ item.sku }}</td>
+          <td class="col-desc">
+            <div class="desc-title">{{ item.product_name }}</div>
+            {% if item.desc_lines %}
+            <ul class="desc-bullets">
+              {% for line in item.desc_lines %}
+              <li>{{ line }}</li>
+              {% endfor %}
+            </ul>
+            {% else %}
+            <div style="font-size: 9.5px; color: #4b5563;">{{ item.description or '-' }}</div>
+            {% endif %}
+          </td>
+          <td class="col-qty">{{ item.quantity }}</td>
+          <td class="col-price">{{ "{:,.0f}".format(item.unit_price) }}</td>
+          <td class="col-total">{{ "{:,.0f}".format(item.total_price) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Benefits and Summary Row -->
+  <div class="summary-section">
+    <!-- Trust Badges -->
+    <div class="benefits-box">
+      <!-- 1. Reliable Performance -->
+      <div class="benefit-item">
+        <div class="benefit-icon-circle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+        </div>
+        <div class="benefit-label">Reliable<br>Performance</div>
+      </div>
+
+      <!-- 2. Longer Backup -->
+      <div class="benefit-item">
+        <div class="benefit-icon-circle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="benefit-label">Longer<br>Backup</div>
+      </div>
+
+      <!-- 3. Fast Charging -->
+      <div class="benefit-item">
+        <div class="benefit-icon-circle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
+        <div class="benefit-label">Fast<br>Charging</div>
+      </div>
+
+      <!-- 4. Low Maintenance -->
+      <div class="benefit-item">
+        <div class="benefit-icon-circle">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <div class="benefit-label">Low<br>Maintenance</div>
+      </div>
     </div>
-    <div class="sig-col">
-      <div class="sig-line">For {{ company.company_name }}</div>
-      <div class="sig-sub">Authorized Signatory</div>
+
+    <!-- Totals Table -->
+    <div class="totals-box">
+      <table class="totals-table">
+        <tr>
+          <td class="total-label">Subtotal</td>
+          <td class="total-value">{{ "{:,.0f}".format(subtotal) }}</td>
+        </tr>
+        {% if discount_amount > 0 %}
+        <tr>
+          <td class="total-label">Discount {% if coupon_code %}({{ coupon_code }}){% endif %}</td>
+          <td class="total-value" style="color: #16a34a;">-{{ "{:,.0f}".format(discount_amount) }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="total-label">GST ({{ "{:.0f}".format(tax_rate) }}%)</td>
+          <td class="total-value">{{ "{:,.0f}".format(tax_amount) }}</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td class="total-label">Grand Total (₹)</td>
+          <td class="total-value">{{ "{:,.0f}".format(grand_total) }}</td>
+        </tr>
+      </table>
     </div>
   </div>
 
-  <!-- Footer -->
-  <div class="footer-bar">
-    <strong>{{ company.company_name }}</strong> | {{ company.address }}<br>
-    Toll Free: {{ company.phone }} | Email: {{ company.email }} | Web: {{ company.website }}
+  <!-- Bottom Terms & Contact / Signature Section -->
+  <div class="bottom-section">
+    <!-- Terms & Conditions Card -->
+    <div class="terms-col">
+      <div class="terms-title">Terms & Conditions</div>
+      <ol class="terms-list">
+        <li>Prices are inclusive of standard installation (if applicable).</li>
+        <li>GST will be charged as per actual.</li>
+        <li>Quotation is valid for 15 days from the date of issue.</li>
+        <li>Warranty as per Livguard policy.</li>
+        <li>Any additional accessories or wiring beyond standard scope will be charged extra.</li>
+        <li>Delivery and installation subject to availability.</li>
+        <li>This is a tentative quotation and may vary based on final site survey.</li>
+      </ol>
+    </div>
+
+    <!-- Contact & Signatures Column -->
+    <div class="contact-sig-col">
+      <!-- Contact Box -->
+      <div class="contact-card">
+        <div class="contact-card-title">For any queries, contact:</div>
+        <div class="contact-card-item">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+          <span>Livguard Solar Pro Plus</span>
+        </div>
+        <div class="contact-card-item">
+          <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+          <span>+91 98765 43210</span>
+        </div>
+        <div class="contact-card-item">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          <span>sales@livguard.com</span>
+        </div>
+      </div>
+
+      <!-- Signature Blocks -->
+      <div class="signatures-row">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <div class="sig-text">Authorized Signature</div>
+        </div>
+        <div class="sig-block">
+          <div class="sig-box"></div>
+          <div class="sig-text">Customer Signature</div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Branded Footer Bar -->
+  <div class="brand-footer">
+    <div class="footer-left">
+      <div class="footer-logo">
+        <div>Liv<span style="color: #e31e24;">7</span>uard</div>
+        <div class="footer-logo-sub">Energy Unlimited</div>
+      </div>
+      <div class="footer-pill">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        <span>Trusted Brand</span>
+      </div>
+      <div class="footer-pill">
+        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <span>Pan India Support</span>
+      </div>
+      <div class="footer-pill">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span>Wide Service Network</span>
+      </div>
+    </div>
+
+    <div class="footer-right">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+      <span>POWERING A BETTER TOMORROW</span>
+    </div>
+  </div>
+
 </body>
 </html>

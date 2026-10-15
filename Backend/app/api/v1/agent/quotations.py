@@ -98,6 +98,7 @@ def save_draft_quotation(
             sku=itm["sku"],
             product_name=itm["product_name"],
             description=itm["description"],
+            image_url=itm.get("image_url"),
             unit_price=itm["unit_price"],
             quantity=itm["quantity"],
             total_price=itm["total_price"]
@@ -181,6 +182,7 @@ def issue_new_quotation(
             sku=itm["sku"],
             product_name=itm["product_name"],
             description=itm["description"],
+            image_url=itm.get("image_url"),
             unit_price=itm["unit_price"],
             quantity=itm["quantity"],
             total_price=itm["total_price"]
@@ -253,6 +255,7 @@ def get_my_quotation_details(
                 "sku": i.sku,
                 "product_name": i.product_name,
                 "description": i.description,
+                "image_url": i.image_url or (i.product.image_url if i.product else None),
                 "unit_price": float(i.unit_price),
                 "quantity": i.quantity,
                 "total_price": float(i.total_price)
@@ -369,6 +372,7 @@ def revise_quotation(
             sku=itm["sku"],
             product_name=itm["product_name"],
             description=itm["description"],
+            image_url=itm.get("image_url"),
             unit_price=itm["unit_price"],
             quantity=itm["quantity"],
             total_price=itm["total_price"]
@@ -438,6 +442,7 @@ def duplicate_quotation(
             sku=item.sku,
             product_name=item.product_name,
             description=item.description,
+            image_url=item.image_url,
             unit_price=item.unit_price,
             quantity=item.quantity,
             total_price=item.total_price

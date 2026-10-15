@@ -67,6 +67,7 @@ class QuotationItem(Base):
     sku = Column(String(100), nullable=False)
     product_name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
+    image_url = Column(String(512), nullable=True)
     unit_price = Column(Numeric(12, 2), nullable=False)
     quantity = Column(Integer, default=1, nullable=False)
     total_price = Column(Numeric(12, 2), nullable=False)

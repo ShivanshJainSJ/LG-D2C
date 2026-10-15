@@ -15,26 +15,22 @@ import {
   Send,
   Loader2,
   Eye,
-  ArrowRight,
+  Package,
+  ShieldCheck,
+  Clock,
+  Zap,
+  Settings,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-
-interface ActiveProduct {
-  id: string;
-  sku: string;
-  name: string;
-  brand: string;
-  category: string;
-  description: string;
-  unit_price: number;
-}
+import { SkuAutocomplete, SearchProduct } from "@/components/SkuAutocomplete";
 
 interface SelectedItem {
   product_id: string;
   sku: string;
   product_name: string;
   description: string;
+  image_url?: string | null;
   unit_price: number;
   quantity: number;
   total_price: number;
@@ -55,20 +51,18 @@ interface PreviewCalculation {
 export default function NewQuotationPage() {
   const router = useRouter();
 
-  // Products from Master
-  const [availableProducts, setAvailableProducts] = useState<ActiveProduct[]>([]);
-  const [productSearch, setProductSearch] = useState("");
-
   // Customer Form
   const [customerName, setCustomerName] = useState("");
   const [customerMobile, setCustomerMobile] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
 
-  // Line Items
+  // Product Selection via Autocomplete
+  const [pendingProduct, setPendingProduct] = useState<SearchProduct | null>(null);
+  const [pendingQuantity, setPendingQuantity] = useState(1);
+
+  // Line Items in Quotation
   const [items, setItems] = useState<{ product_id: string; quantity: number }[]>([]);
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [inputQuantity, setInputQuantity] = useState(1);
 
   // Coupon
   const [couponCode, setCouponCode] = useState("");
@@ -79,21 +73,6 @@ export default function NewQuotationPage() {
   const [calcLoading, setCalcLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitLoading, setSubmitLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchCatalog = async () => {
-      try {
-        const prods = await api.get<ActiveProduct[]>("/agent/products");
-        setAvailableProducts(prods);
-        if (prods.length > 0) {
-          setSelectedProductId(prods[0].id);
-        }
-      } catch (err) {
-        console.error("Failed to load products:", err);
-      }
-    };
-    fetchCatalog();
-  }, []);
 
   // Recalculate preview whenever items or coupon changes
   useEffect(() => {
@@ -125,77 +104,118 @@ export default function NewQuotationPage() {
     runRecalculation();
   }, [items, couponApplied]);
 
-  const handleAddItem = () => {
-    if (!selectedProductId || inputQuantity <= 0) return;
+  const handleSelectFromAutocomplete = (product: SearchProduct) => {
+    setPendingProduct(product);
+    setPendingQuantity(1);
+    setErrorMsg(null);
+  };
 
-    const existingIndex = items.findIndex((i) => i.product_id === selectedProductId);
+  const handleAddPendingProduct = () => {
+    if (!pendingProduct || pendingQuantity <= 0) return;
+
+    const existingIndex = items.findIndex((i) => i.product_id === pendingProduct.id);
     if (existingIndex >= 0) {
       const updated = [...items];
-      updated[existingIndex].quantity += inputQuantity;
+      updated[existingIndex].quantity += pendingQuantity;
       setItems(updated);
     } else {
-      setItems([...items, { product_id: selectedProductId, quantity: inputQuantity }]);
+      setItems([...items, { product_id: pendingProduct.id, quantity: pendingQuantity }]);
     }
-    setInputQuantity(1);
+    setPendingProduct(null);
+    setPendingQuantity(1);
   };
 
-  const handleRemoveItem = (index: number) => {
-    const updated = items.filter((_, idx) => idx !== index);
-    setItems(updated);
+  const handleRemoveItem = (productId: string) => {
+    setItems(items.filter((i) => i.product_id !== productId));
   };
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleUpdateItemQuantity = (productId: string, qty: number) => {
+    if (qty <= 0) {
+      handleRemoveItem(productId);
+      return;
+    }
+    setItems(
+      items.map((i) => (i.product_id === productId ? { ...i, quantity: qty } : i))
+    );
+  };
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponCode.trim()) return;
-    setCouponApplied(couponCode.trim().toUpperCase());
+
+    setErrorMsg(null);
+    try {
+      await api.post("/agent/quotations/preview", {
+        customer_name: customerName || "Customer Preview",
+        customer_mobile: customerMobile || "9876543210",
+        items,
+        coupon_code: couponCode.trim().toUpperCase(),
+      });
+      setCouponApplied(couponCode.trim().toUpperCase());
+      setCouponCode("");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Invalid or ineligible coupon code.");
+    }
   };
 
   const handleRemoveCoupon = () => {
-    setCouponCode("");
     setCouponApplied("");
   };
 
   const handleSaveDraft = async () => {
-    if (!customerName || !customerMobile || items.length === 0) {
-      setErrorMsg("Customer name, mobile number and at least one line item are required.");
+    if (!customerName.trim() || !customerMobile.trim()) {
+      setErrorMsg("Please provide customer name and mobile contact before saving draft.");
       return;
     }
+    if (items.length === 0) {
+      setErrorMsg("Please add at least one product before saving.");
+      return;
+    }
+
     setSubmitLoading(true);
     setErrorMsg(null);
     try {
-      const res = await api.post<{ quotation_id: string }>("/agent/quotations/draft", {
-        customer_name: customerName,
-        customer_mobile: customerMobile,
-        customer_email: customerEmail || null,
-        customer_address: customerAddress || null,
-        items,
-        coupon_code: couponApplied || null,
-      });
+      const res = await api.post<{ message: string; quotation_id: string }>(
+        "/agent/quotations/draft",
+        {
+          customer_name: customerName,
+          customer_mobile: customerMobile,
+          customer_email: customerEmail || undefined,
+          customer_address: customerAddress || undefined,
+          items,
+          coupon_code: couponApplied || undefined,
+        }
+      );
       router.push(`/agent/quotations/${res.quotation_id}`);
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to save draft.");
+      setErrorMsg(err.message || "Failed to save draft quotation.");
     } finally {
       setSubmitLoading(false);
     }
   };
 
   const handleIssueQuotation = async () => {
-    if (!customerName || !customerMobile || items.length === 0) {
-      setErrorMsg("Customer name, mobile number and at least one line item are required.");
+    if (!customerName.trim() || !customerMobile.trim()) {
+      setErrorMsg("Please provide customer name and mobile contact to issue an official quotation.");
       return;
     }
+    if (items.length === 0) {
+      setErrorMsg("Please add at least one product before issuing.");
+      return;
+    }
+
     setSubmitLoading(true);
     setErrorMsg(null);
     try {
-      const res = await api.post<{ quotation_id: string; quotation_number: string }>(
+      const res = await api.post<{ message: string; quotation_id: string; quotation_number: string }>(
         "/agent/quotations/issue",
         {
           customer_name: customerName,
           customer_mobile: customerMobile,
-          customer_email: customerEmail || null,
-          customer_address: customerAddress || null,
+          customer_email: customerEmail || undefined,
+          customer_address: customerAddress || undefined,
           items,
-          coupon_code: couponApplied || null,
+          coupon_code: couponApplied || undefined,
         }
       );
       router.push(`/agent/quotations/${res.quotation_id}`);
@@ -206,31 +226,25 @@ export default function NewQuotationPage() {
     }
   };
 
-  const filteredProducts = availableProducts.filter(
-    (p) =>
-      p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.name.toLowerCase().includes(productSearch.toLowerCase())
-  );
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create Customer Quotation</h1>
         <p className="text-xs text-slate-500 mt-1">
-          SKU lookup, dynamic price recalculation, authorized coupon discount and instant Livguard branded preview
+          Searchable SKU lookup, dynamic price recalculation, authorized coupon discount and pixel-perfect Livguard branded preview
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2.5 text-xs text-red-700 font-semibold">
+        <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2.5 text-xs text-red-700 font-semibold shadow-sm">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Input Forms */}
+        {/* Left Column: Form Inputs */}
         <div className="lg:col-span-7 space-y-6">
           {/* Step 1: Customer Details */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -249,10 +263,10 @@ export default function NewQuotationPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Ramesh Kumar"
+                  placeholder="e.g. Rohan Mehra"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white"
+                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
                 />
               </div>
 
@@ -266,7 +280,7 @@ export default function NewQuotationPage() {
                   placeholder="e.g. 9876543210"
                   value={customerMobile}
                   onChange={(e) => setCustomerMobile(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white"
+                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
                 />
               </div>
             </div>
@@ -278,10 +292,10 @@ export default function NewQuotationPage() {
                 </label>
                 <input
                   type="email"
-                  placeholder="ramesh@example.com"
+                  placeholder="rohan@example.com"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:bg-white"
+                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
                 />
               </div>
 
@@ -291,92 +305,161 @@ export default function NewQuotationPage() {
                 </label>
                 <input
                   type="text"
-                  placeholder="Sector 14, Gurugram, Haryana"
+                  placeholder="B-42, Sector 14, Noida, UP"
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:bg-white"
+                  className="mt-1 w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Step 2: SKU-Based Product Selection */}
+          {/* Step 2: SKU Searchable Autocomplete Entry (Mandatory Requirement) */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center space-x-2">
               <span className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px]">
                 2
               </span>
-              <span>SKU Product Entry</span>
+              <span>Searchable SKU Product Selector</span>
             </h2>
 
-            {/* Product Picker */}
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
-                  Select Product / SKU *
-                </label>
-                <div className="mt-1 grid grid-cols-1 sm:grid-cols-4 gap-2">
-                  <div className="sm:col-span-3">
-                    <select
-                      value={selectedProductId}
-                      onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white"
-                    >
-                      {availableProducts.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          [{p.sku}] {p.name} - {formatCurrency(p.unit_price)}
-                        </option>
-                      ))}
-                    </select>
+            <div className="space-y-3">
+              <label className="font-bold text-slate-700 uppercase tracking-wider text-[10px]">
+                Type SKU code or product name to search
+              </label>
+
+              {/* Dedicated Autocomplete Component */}
+              <SkuAutocomplete
+                onSelectProduct={handleSelectFromAutocomplete}
+                placeholder="Type SKU or product name (e.g. LG-SET-1, Inverter, Tubular)..."
+              />
+
+              {/* Active Selection Staging Card */}
+              {pendingProduct && (
+                <div className="mt-3 p-4 bg-red-50/50 border-2 border-red-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                      {pendingProduct.image_url ? (
+                        <img
+                          src={pendingProduct.image_url}
+                          alt={pendingProduct.name}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Package className="w-6 h-6 text-slate-400" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-slate-900 text-white">
+                          {pendingProduct.sku}
+                        </span>
+                        <span className="text-[10px] font-bold text-red-600 uppercase bg-red-100/80 px-1.5 py-0.5 rounded">
+                          {pendingProduct.category}
+                        </span>
+                      </div>
+                      <div className="font-bold text-xs text-slate-900 mt-1">{pendingProduct.name}</div>
+                      <div className="text-[11px] font-extrabold text-red-600 mt-0.5">
+                        {formatCurrency(pendingProduct.unit_price)} <span className="text-[9px] text-slate-500 font-normal">unit price</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <input
-                      type="number"
-                      min={1}
-                      value={inputQuantity}
-                      onChange={(e) => setInputQuantity(parseInt(e.target.value) || 1)}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-black text-center text-slate-900 focus:ring-2 focus:ring-red-500 focus:bg-white"
-                      placeholder="Qty"
-                    />
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg p-1">
+                      <label className="text-[10px] font-bold text-slate-500 px-1">Qty:</label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={pendingQuantity}
+                        onChange={(e) => setPendingQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-14 p-1.5 font-black text-center text-xs text-slate-900 border-none outline-none"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddPendingProduct}
+                      className="flex-1 sm:flex-none py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center justify-center gap-1.5"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Item</span>
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleAddItem}
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg flex items-center justify-center space-x-1.5 transition shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Item to Quotation</span>
-              </button>
+              )}
             </div>
 
-            {/* Added Items List */}
-            <div className="pt-3 border-t border-slate-100">
-              <h3 className="font-bold text-slate-700 text-[10px] uppercase tracking-wider mb-2">
-                Quotation Line Items ({items.length})
-              </h3>
-              {calculation?.items && calculation.items.length > 0 ? (
-                <div className="space-y-2">
-                  {calculation.items.map((item, index) => (
-                    <div
-                      key={item.product_id}
-                      className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs"
-                    >
-                      <div className="space-y-0.5 overflow-hidden pr-2">
-                        <div className="font-mono font-bold text-red-600">{item.sku}</div>
-                        <div className="font-bold text-slate-900 truncate">{item.product_name}</div>
-                        <div className="text-[10px] text-slate-500">
-                          {formatCurrency(item.unit_price)} &times; {item.quantity} unit{item.quantity > 1 ? "s" : ""}
+            {/* Line Items Table */}
+            <div className="mt-4 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-extrabold uppercase text-slate-700 tracking-wider">
+                  Quotation Line Items ({items.length})
+                </span>
+                {items.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setItems([])}
+                    className="text-[10px] text-red-600 hover:text-red-700 font-bold"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {items.length === 0 ? (
+                <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
+                  <Package className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
+                  <div className="text-xs font-bold text-slate-600">No products added yet</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    Use the SKU search bar above to find and add Livguard batteries, inverters or combo sets.
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                  {calculation?.items?.map((item, idx) => (
+                    <div key={item.product_id} className="p-3 bg-white flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-5 h-5 rounded-full bg-slate-100 text-slate-600 font-mono font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-900 truncate">{item.product_name}</div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="font-mono text-[10px] text-red-600 font-bold">{item.sku}</span>
+                            <span className="text-[10px] text-slate-400">@ {formatCurrency(item.unit_price)}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3 shrink-0">
-                        <span className="font-black text-slate-900">{formatCurrency(item.total_price)}</span>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-0.5 bg-slate-50">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.product_id, item.quantity - 1)}
+                            className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-white rounded font-bold text-xs"
+                          >
+                            -
+                          </button>
+                          <span className="w-7 text-center font-black text-slate-900 text-xs">
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateItemQuantity(item.product_id, item.quantity + 1)}
+                            className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-white rounded font-bold text-xs"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <div className="w-20 text-right font-black text-slate-900 text-xs">
+                          {formatCurrency(item.total_price)}
+                        </div>
+
                         <button
                           type="button"
-                          onClick={() => handleRemoveItem(index)}
-                          className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                          onClick={() => handleRemoveItem(item.product_id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 transition"
                           title="Remove item"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -385,18 +468,16 @@ export default function NewQuotationPage() {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="py-6 text-center text-slate-400 text-xs">
-                  No items added yet. Select an SKU above and click "Add Item".
-                </div>
               )}
             </div>
           </div>
 
-          {/* Step 3: Promotional Coupon */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+          {/* Step 3: Promotional Coupon Code */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
             <h2 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center space-x-2">
-              <Ticket className="w-4 h-4 text-red-600" />
+              <span className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px]">
+                3
+              </span>
               <span>Promotional Coupon Code</span>
             </h2>
 
@@ -423,11 +504,11 @@ export default function NewQuotationPage() {
                   placeholder="e.g. LIVGUARD10"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold text-xs focus:ring-2 focus:ring-red-500 focus:bg-white"
+                  className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold text-xs focus:ring-2 focus:ring-red-500 focus:bg-white outline-none"
                 />
                 <button
                   type="submit"
-                  disabled={!couponCode.trim()}
+                  disabled={!couponCode.trim() || items.length === 0}
                   className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition disabled:opacity-40"
                 >
                   Apply
@@ -437,10 +518,10 @@ export default function NewQuotationPage() {
           </div>
         </div>
 
-        {/* Right Column: Branded Quotation Preview (Matching Reference) */}
+        {/* Right Column: Branded Quotation Live Preview (Exact Quotation Format Match) */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-2xl border-2 border-slate-300 shadow-xl overflow-hidden sticky top-20">
-            {/* Live Preview Header */}
+            {/* Live Preview Header Bar */}
             <div className="bg-slate-900 text-white p-3 flex items-center justify-between text-xs font-bold">
               <span className="flex items-center space-x-1.5">
                 <Eye className="w-4 h-4 text-red-500" />
@@ -449,72 +530,102 @@ export default function NewQuotationPage() {
               {calcLoading && <span className="text-[10px] text-red-400 animate-pulse">Calculating...</span>}
             </div>
 
-            {/* Branded Quotation Sheet Simulation */}
-            <div className="p-4 sm:p-5 space-y-4 text-xs bg-white text-slate-900">
-              {/* Livguard Logo & Brand Tagline */}
+            {/* Document Body */}
+            <div className="p-4 sm:p-5 space-y-3.5 text-xs bg-white text-slate-900">
+              {/* Header: Logo & Title */}
               <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                 <div>
-                  <div className="text-xl font-black text-red-600 tracking-tight">Livguard</div>
-                  <div className="text-[9px] font-bold text-slate-500 tracking-wider uppercase">
-                    More Power. Less Waiting.
+                  <div className="text-xl font-black text-slate-900 tracking-tight italic">
+                    Liv<span className="text-red-600">7</span>uard
+                  </div>
+                  <div className="text-[9px] font-bold text-slate-700 tracking-wider">Energy Unlimited</div>
+                  <div className="text-sm font-black text-slate-900 uppercase mt-2">QUOTATION</div>
+                  <div className="text-[9.5px] text-slate-500">Reliable Power Solution for a Brighter Tomorrow</div>
+                </div>
+
+                <div className="text-right">
+                  <div className="inline-block bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded border-l-2 border-red-600">
+                    POWER BACKUP
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="px-2 py-0.5 rounded bg-slate-900 text-white font-bold text-[9px]">
-                    LITHIUM-X SERIES
-                  </span>
+              </div>
+
+              {/* Customer & Quotation Info Panels (Rounded Gray Cards) */}
+              <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                {/* Customer Details */}
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
+                  <div className="text-[10px] font-black text-red-600 uppercase">Customer Details</div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Name:</span>
+                    <span className="font-bold text-slate-900 truncate max-w-[100px]">
+                      {customerName || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Contact:</span>
+                    <span className="font-semibold text-slate-800">{customerMobile || "—"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Address:</span>
+                    <span className="text-slate-700 truncate max-w-[100px]">{customerAddress || "—"}</span>
+                  </div>
+                </div>
+
+                {/* Quotation Info */}
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
+                  <div className="text-[10px] font-black text-slate-700 uppercase">Quotation Info</div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Quote No:</span>
+                    <span className="font-mono font-bold text-red-600">LGQ/2026/001</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Validity:</span>
+                    <span className="font-semibold text-slate-800">15 Days</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Tax Policy:</span>
+                    <span className="font-semibold text-slate-800">GST 18%</span>
+                  </div>
                 </div>
               </div>
 
-              {/* Title Bar */}
-              <div className="bg-red-600 text-white py-1.5 px-3 rounded font-black text-center text-xs tracking-wider uppercase">
-                Official Quotation Preview
-              </div>
-
-              {/* Customer Meta */}
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1 text-[11px]">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Customer:</span>
-                  <span className="font-bold text-slate-900">{customerName || "Customer Name"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Mobile:</span>
-                  <span className="font-semibold text-slate-800">{customerMobile || "Mobile Number"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Quotation No:</span>
-                  <span className="font-mono font-bold text-red-600">Auto-assigned upon Issue</span>
-                </div>
-              </div>
-
-              {/* Items Preview Table */}
+              {/* Exact 7-Column Products Table */}
               <div className="border border-slate-200 rounded-lg overflow-hidden">
-                <table className="w-full text-left text-[11px]">
-                  <thead className="bg-slate-900 text-white uppercase text-[9px] font-bold">
+                <table className="w-full text-left text-[10px]">
+                  <thead className="bg-slate-900 text-white uppercase text-[8.5px] font-bold">
                     <tr>
-                      <th className="py-2 px-2.5">Product / SKU</th>
-                      <th className="py-2 px-1 text-center">Qty</th>
-                      <th className="py-2 px-2.5 text-right">Total</th>
+                      <th className="py-2 px-1 text-center w-6">#</th>
+                      <th className="py-2 px-1.5">Product</th>
+                      <th className="py-2 px-1.5 text-center">SKU</th>
+                      <th className="py-2 px-1 text-center w-8">Qty</th>
+                      <th className="py-2 px-2 text-right">Price (₹)</th>
+                      <th className="py-2 px-2 text-right">Total (₹)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {calculation?.items && calculation.items.length > 0 ? (
-                      calculation.items.map((itm) => (
-                        <tr key={itm.product_id}>
-                          <td className="py-2 px-2.5">
+                      calculation.items.map((itm, idx) => (
+                        <tr key={itm.product_id} className="hover:bg-slate-50/50">
+                          <td className="py-2 px-1 text-center font-bold text-slate-500">{idx + 1}</td>
+                          <td className="py-2 px-1.5">
                             <div className="font-bold text-slate-900 leading-tight">{itm.product_name}</div>
-                            <div className="font-mono text-[9px] text-red-600">{itm.sku}</div>
+                          </td>
+                          <td className="py-2 px-1.5 text-center font-mono text-[9px] text-red-600 font-bold">
+                            {itm.sku}
                           </td>
                           <td className="py-2 px-1 text-center font-bold text-slate-800">{itm.quantity}</td>
-                          <td className="py-2 px-2.5 text-right font-black text-slate-900">
+                          <td className="py-2 px-2 text-right text-slate-700">
+                            {formatCurrency(itm.unit_price)}
+                          </td>
+                          <td className="py-2 px-2 text-right font-black text-slate-900">
                             {formatCurrency(itm.total_price)}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-6 text-center text-slate-400 text-xs">
-                          Add items to preview financial totals
+                        <td colSpan={6} className="py-6 text-center text-slate-400 text-xs">
+                          Search and add items to see live preview
                         </td>
                       </tr>
                     )}
@@ -522,9 +633,29 @@ export default function NewQuotationPage() {
                 </table>
               </div>
 
-              {/* Financial Summary */}
+              {/* Trust Badges Row */}
+              <div className="grid grid-cols-4 gap-1 py-1 text-center border-t border-b border-slate-100">
+                <div className="flex flex-col items-center">
+                  <ShieldCheck className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-[8px] font-bold text-slate-700 mt-0.5">Reliable</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Clock className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-[8px] font-bold text-slate-700 mt-0.5">Backup</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Zap className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-[8px] font-bold text-slate-700 mt-0.5">Fast Charge</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Settings className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-[8px] font-bold text-slate-700 mt-0.5">Low Maint.</span>
+                </div>
+              </div>
+
+              {/* Financial Totals Box */}
               {calculation && (
-                <div className="space-y-1.5 pt-2 border-t border-slate-100 text-xs">
+                <div className="space-y-1 pt-1 text-xs">
                   <div className="flex justify-between text-slate-600">
                     <span>Subtotal:</span>
                     <span className="font-bold text-slate-900">{formatCurrency(calculation.subtotal)}</span>
@@ -539,8 +670,8 @@ export default function NewQuotationPage() {
                     <span>GST ({calculation.tax_rate}%):</span>
                     <span className="font-bold text-slate-900">{formatCurrency(calculation.tax_amount)}</span>
                   </div>
-                  <div className="flex justify-between p-2.5 rounded-lg bg-red-600 text-white font-black text-sm">
-                    <span>Grand Total:</span>
+                  <div className="flex justify-between p-2 rounded-lg bg-red-600 text-white font-black text-sm shadow-sm">
+                    <span>Grand Total (₹):</span>
                     <span>{formatCurrency(calculation.grand_total)}</span>
                   </div>
                 </div>
@@ -553,7 +684,7 @@ export default function NewQuotationPage() {
                 type="button"
                 onClick={handleIssueQuotation}
                 disabled={submitLoading || items.length === 0}
-                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-red-600/30 transition flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
               >
                 {submitLoading ? (
                   <>
@@ -572,7 +703,7 @@ export default function NewQuotationPage() {
                 type="button"
                 onClick={handleSaveDraft}
                 disabled={submitLoading || items.length === 0}
-                className="w-full py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                className="w-full py-2.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save as Draft</span>
