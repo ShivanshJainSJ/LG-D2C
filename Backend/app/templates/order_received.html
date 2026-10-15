@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Livguard Order Confirmation - {{ order_number }}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #ffffff;
+      color: #1a1a1a;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 12mm 15mm;
+      position: relative;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    .brand-name {
+      font-size: 28px;
+      font-weight: 900;
+      color: #e31e24;
+      display: inline-block;
+    }
+    .brand-tagline {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+    }
+    .order-status-badge {
+      display: inline-block;
+      background: #16a34a;
+      color: #ffffff;
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+    .title-bar {
+      background: #111827;
+      color: #ffffff;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 6px solid #16a34a;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .title-text {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .title-meta {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .meta-grid {
+      display: table;
+      width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      background: #f9fafb;
+    }
+    .meta-col {
+      display: table-cell;
+      width: 50%;
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+    .meta-col:first-child {
+      border-right: 1px solid #e5e7eb;
+    }
+    .section-heading {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #111827;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 4px;
+    }
+    .meta-row {
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #374151;
+    }
+    .meta-row strong {
+      color: #111827;
+      min-width: 110px;
+      display: inline-block;
+    }
+    .payment-box {
+      background: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      border-radius: 4px;
+      padding: 10px 14px;
+      margin-bottom: 15px;
+    }
+    .payment-box-title {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #065f46;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .payment-details-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    .payment-details-table td {
+      padding: 4px 6px;
+    }
+    .product-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    .product-table th {
+      background-color: #111827;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 10px;
+      text-transform: uppercase;
+      border: 1px solid #111827;
+    }
+    .product-table th.center { text-align: center; }
+    .product-table th.right { text-align: right; }
+    .product-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      font-size: 11px;
+      vertical-align: middle;
+      color: #1f2937;
+    }
+    .product-sku {
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #e31e24;
+    }
+    .grand-total-banner {
+      background: #111827;
+      color: #ffffff;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+    .grand-total-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .grand-total-val {
+      font-size: 18px;
+      font-weight: 900;
+      color: #22c55e;
+    }
+    .signature-grid {
+      display: table;
+      width: 100%;
+      margin-top: 25px;
+      margin-bottom: 20px;
+    }
+    .sig-col {
+      display: table-cell;
+      width: 50%;
+      text-align: center;
+      padding: 10px 20px;
+    }
+    .sig-line {
+      border-top: 1px dashed #9ca3af;
+      margin-top: 40px;
+      padding-top: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #374151;
+    }
+    .footer-bar {
+      border-top: 2px solid #e31e24;
+      padding-top: 8px;
+      text-align: center;
+      font-size: 9px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td>
+        <div class="brand-name">Livguard</div>
+        <div class="brand-tagline">{{ company.tagline }}</div>
+      </td>
+      <td style="text-align: right;">
+        <div class="order-status-badge">ORDER CONFIRMED & VERIFIED</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Title bar -->
+  <div class="title-bar">
+    <div class="title-text">OFFICIAL ORDER RECEIVED CONFIRMATION</div>
+    <div class="title-meta">
+      <strong>Order No:</strong> {{ order_number }} &nbsp;|&nbsp;
+      <strong>Date:</strong> {{ order_date }}
+    </div>
+  </div>
+
+  <!-- Meta Info -->
+  <div class="meta-grid">
+    <div class="meta-col">
+      <div class="section-heading">Customer Information</div>
+      <div class="meta-row"><strong>Name:</strong> {{ customer_name }}</div>
+      <div class="meta-row"><strong>Mobile:</strong> {{ customer_mobile }}</div>
+      {% if customer_email %}
+      <div class="meta-row"><strong>Email:</strong> {{ customer_email }}</div>
+      {% endif %}
+      {% if customer_address %}
+      <div class="meta-row"><strong>Delivery Address:</strong> {{ customer_address }}</div>
+      {% endif %}
+    </div>
+    <div class="meta-col">
+      <div class="section-heading">Order & Quotation Reference</div>
+      <div class="meta-row"><strong>Quotation Ref:</strong> {{ quotation_number }} ({{ revision_label }})</div>
+      <div class="meta-row"><strong>Order Confirmed By:</strong> {{ confirmed_by_name }}</div>
+      <div class="meta-row"><strong>Expected Delivery:</strong> {{ expected_delivery_date or 'To be scheduled' }}</div>
+      <div class="meta-row"><strong>Agent In-charge:</strong> {{ agent_name }}</div>
+    </div>
+  </div>
+
+  <!-- Verified Payment Section -->
+  <div class="payment-box">
+    <div class="payment-box-title">Verified Payment Details</div>
+    <table class="payment-details-table">
+      <tr>
+        <td><strong>Payment Method:</strong> {{ payment_method }}</td>
+        <td><strong>Transaction Ref:</strong> {{ transaction_ref }}</td>
+        <td><strong>Verified Amount:</strong> ₹{{ "%.2f"|format(confirmed_amount) }}</td>
+        <td><strong>Status:</strong> <span style="color: #059669; font-weight: 700;">VERIFIED</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Items Table -->
+  <table class="product-table">
+    <thead>
+      <tr>
+        <th class="center" style="width: 5%;">S.No.</th>
+        <th style="width: 25%;">Product</th>
+        <th style="width: 20%;">SKU / Model No.</th>
+        <th style="width: 25%;">Description</th>
+        <th class="right" style="width: 12%;">Unit Price (₹)</th>
+        <th class="center" style="width: 8%;">Qty.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td class="center">{{ loop.index }}</td>
+        <td><strong>{{ item.product_name }}</strong></td>
+        <td><span class="product-sku">{{ item.sku }}</span></td>
+        <td>{{ item.description or '-' }}</td>
+        <td class="right">{{ "%.2f"|format(item.unit_price) }}</td>
+        <td class="center">{{ item.quantity }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Confirmed Grand Total Banner -->
+  <div class="grand-total-banner">
+    <div class="grand-total-label">Total Confirmed Value (Incl. Taxes):</div>
+    <div class="grand-total-val">₹{{ "%.2f"|format(confirmed_amount) }}</div>
+  </div>
+
+  <!-- Signatures -->
+  <div class="signature-grid">
+    <div class="sig-col">
+      <div class="sig-line">Customer Signature</div>
+    </div>
+    <div class="sig-col">
+      <div class="sig-line">Authorized Signatory - {{ company.company_name }}</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    <strong>{{ company.company_name }}</strong> | {{ company.address }}<br>
+    Toll Free: {{ company.phone }} | Email: {{ company.email }} | Web: {{ company.website }}
+  </div>
+</body>
+</html>

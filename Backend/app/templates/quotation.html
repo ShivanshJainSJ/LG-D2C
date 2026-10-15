@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Livguard Quotation - {{ quotation_number }}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #ffffff;
+      color: #1a1a1a;
+      width: 210mm;
+      min-height: 297mm;
+      padding: 12mm 15mm;
+      position: relative;
+    }
+    /* Header */
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    .header-logo {
+      vertical-align: middle;
+      width: 50%;
+    }
+    .brand-name {
+      font-size: 28px;
+      font-weight: 900;
+      color: #e31e24;
+      letter-spacing: -0.5px;
+      display: inline-block;
+    }
+    .brand-tagline {
+      font-size: 11px;
+      font-weight: 600;
+      color: #4b5563;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+    }
+    .header-banner {
+      width: 50%;
+      text-align: right;
+      vertical-align: middle;
+    }
+    .banner-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border-left: 4px solid #e31e24;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    /* Title bar */
+    .title-bar {
+      background: #e31e24;
+      color: #ffffff;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    .title-text {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .title-meta {
+      font-size: 12px;
+      font-weight: 600;
+    }
+    /* Metadata grid */
+    .meta-grid {
+      display: table;
+      width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      background: #f9fafb;
+    }
+    .meta-col {
+      display: table-cell;
+      width: 50%;
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+    .meta-col:first-child {
+      border-right: 1px solid #e5e7eb;
+    }
+    .section-heading {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #e31e24;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #fee2e2;
+      padding-bottom: 4px;
+    }
+    .meta-row {
+      font-size: 11.5px;
+      line-height: 1.6;
+      color: #374151;
+    }
+    .meta-row strong {
+      color: #111827;
+      min-width: 90px;
+      display: inline-block;
+    }
+    /* Products Table */
+    .product-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+    }
+    .product-table th {
+      background-color: #111827;
+      color: #ffffff;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #111827;
+    }
+    .product-table th.center { text-align: center; }
+    .product-table th.right { text-align: right; }
+    .product-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      font-size: 11px;
+      vertical-align: middle;
+      color: #1f2937;
+    }
+    .product-table tr:nth-child(even) {
+      background-color: #fcfcfc;
+    }
+    .product-sku {
+      font-family: monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: #e31e24;
+    }
+    .product-desc {
+      font-size: 10px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    /* Summary calculation box */
+    .summary-container {
+      width: 100%;
+      margin-bottom: 15px;
+      display: table;
+    }
+    .terms-box {
+      display: table-cell;
+      width: 58%;
+      vertical-align: top;
+      padding-right: 15px;
+    }
+    .totals-box {
+      display: table-cell;
+      width: 42%;
+      vertical-align: top;
+    }
+    .totals-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 6px 10px;
+      font-size: 11.5px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .totals-table td.label {
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .totals-table td.value {
+      text-align: right;
+      font-weight: 700;
+      color: #111827;
+    }
+    .totals-table tr.grand-total-row {
+      background-color: #e31e24;
+      color: #ffffff;
+    }
+    .totals-table tr.grand-total-row td {
+      padding: 9px 10px;
+      font-size: 14px;
+      font-weight: 900;
+      color: #ffffff;
+      border: none;
+    }
+    .terms-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 10px 12px;
+    }
+    .terms-title {
+      font-size: 10.5px;
+      font-weight: 800;
+      color: #111827;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .terms-content {
+      font-size: 9.5px;
+      color: #4b5563;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    /* Signatures */
+    .signature-grid {
+      display: table;
+      width: 100%;
+      margin-top: 20px;
+      margin-bottom: 15px;
+    }
+    .sig-col {
+      display: table-cell;
+      width: 50%;
+      text-align: center;
+      padding: 10px 20px;
+    }
+    .sig-line {
+      border-top: 1px dashed #9ca3af;
+      margin-top: 40px;
+      padding-top: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #374151;
+    }
+    .sig-sub {
+      font-size: 9px;
+      color: #6b7280;
+    }
+    /* Footer */
+    .footer-bar {
+      border-top: 2px solid #e31e24;
+      padding-top: 8px;
+      text-align: center;
+      font-size: 9px;
+      color: #6b7280;
+      line-height: 1.4;
+      background: #ffffff;
+    }
+    .footer-bar strong {
+      color: #111827;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td class="header-logo">
+        <div class="brand-name">Livguard</div>
+        <div class="brand-tagline">{{ company.tagline }}</div>
+      </td>
+      <td class="header-banner">
+        <div class="banner-badge">LITHIUM-X & SOLAR SMART SOLUTIONS</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Title bar -->
+  <div class="title-bar">
+    <div class="title-text">QUOTATION</div>
+    <div class="title-meta">
+      <strong>No:</strong> {{ quotation_number }} &nbsp;|&nbsp; 
+      <strong>{{ revision_label }}</strong> &nbsp;|&nbsp; 
+      <strong>Date:</strong> {{ issue_date }}
+    </div>
+  </div>
+
+  <!-- Customer & Quotation Meta -->
+  <div class="meta-grid">
+    <div class="meta-col">
+      <div class="section-heading">Customer Information</div>
+      <div class="meta-row"><strong>Name:</strong> {{ customer_name }}</div>
+      <div class="meta-row"><strong>Mobile:</strong> {{ customer_mobile }}</div>
+      {% if customer_email %}
+      <div class="meta-row"><strong>Email:</strong> {{ customer_email }}</div>
+      {% endif %}
+      {% if customer_address %}
+      <div class="meta-row"><strong>Address:</strong> {{ customer_address }}</div>
+      {% endif %}
+    </div>
+    <div class="meta-col">
+      <div class="section-heading">Quotation Details</div>
+      <div class="meta-row"><strong>Valid Until:</strong> {{ expiry_date }}</div>
+      <div class="meta-row"><strong>Prepared By:</strong> {{ agent_name }}</div>
+      <div class="meta-row"><strong>Agent Contact:</strong> {{ agent_mobile }}</div>
+      <div class="meta-row"><strong>Tax Status:</strong> {{ tax_policy }}</div>
+    </div>
+  </div>
+
+  <!-- Product Table -->
+  <table class="product-table">
+    <thead>
+      <tr>
+        <th class="center" style="width: 5%;">S.No.</th>
+        <th style="width: 20%;">Product</th>
+        <th style="width: 17%;">SKU / Model No.</th>
+        <th style="width: 28%;">Description</th>
+        <th class="right" style="width: 12%;">Unit Price (₹)</th>
+        <th class="center" style="width: 6%;">Qty.</th>
+        <th class="right" style="width: 12%;">Total Price (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td class="center">{{ loop.index }}</td>
+        <td><strong>{{ item.product_name }}</strong></td>
+        <td><span class="product-sku">{{ item.sku }}</span></td>
+        <td>
+          <div class="product-desc">{{ item.description or '-' }}</div>
+        </td>
+        <td class="right">{{ "%.2f"|format(item.unit_price) }}</td>
+        <td class="center">{{ item.quantity }}</td>
+        <td class="right">{{ "%.2f"|format(item.total_price) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Summary and Terms -->
+  <div class="summary-container">
+    <div class="terms-box">
+      <div class="terms-card">
+        <div class="terms-title">Terms & Conditions</div>
+        <div class="terms-content">{{ company.terms_conditions }}</div>
+      </div>
+    </div>
+    <div class="totals-box">
+      <table class="totals-table">
+        <tr>
+          <td class="label">Subtotal:</td>
+          <td class="value">₹{{ "%.2f"|format(subtotal) }}</td>
+        </tr>
+        {% if discount_amount > 0 %}
+        <tr>
+          <td class="label">Coupon Discount {% if coupon_code %}({{ coupon_code }}){% endif %}:</td>
+          <td class="value" style="color: #16a34a;">-₹{{ "%.2f"|format(discount_amount) }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="label">GST ({{ tax_rate }}%):</td>
+          <td class="value">₹{{ "%.2f"|format(tax_amount) }}</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td class="label" style="color: #ffffff;">Grand Total:</td>
+          <td class="value" style="color: #ffffff;">₹{{ "%.2f"|format(grand_total) }}</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Signatures -->
+  <div class="signature-grid">
+    <div class="sig-col">
+      <div class="sig-line">Customer Acceptance</div>
+      <div class="sig-sub">Signature & Date</div>
+    </div>
+    <div class="sig-col">
+      <div class="sig-line">For {{ company.company_name }}</div>
+      <div class="sig-sub">Authorized Signatory</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer-bar">
+    <strong>{{ company.company_name }}</strong> | {{ company.address }}<br>
+    Toll Free: {{ company.phone }} | Email: {{ company.email }} | Web: {{ company.website }}
+  </div>
+</body>
+</html>
