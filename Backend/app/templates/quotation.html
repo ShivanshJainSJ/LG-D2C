@@ -28,13 +28,21 @@
     .header-container {
       display: flex;
       justify-content: space-between;
-      align-items: stretch;
+      align-items: center;
       margin-bottom: 12px;
       position: relative;
     }
     .header-left {
-      width: 52%;
-      padding-top: 6px;
+      width: 50%;
+      padding-top: 2px;
+    }
+    .main-logo-img {
+      height: 52px;
+      max-width: 160px;
+      border-radius: 6px;
+      object-fit: contain;
+      display: block;
+      margin-bottom: 4px;
     }
     .logo-row {
       display: flex;
@@ -67,19 +75,19 @@
       margin-bottom: 12px;
     }
     .quotation-main-title {
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 900;
       color: #111827;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       line-height: 1.1;
-      margin-top: 6px;
+      margin-top: 4px;
     }
     .quotation-subtitle {
-      font-size: 11.5px;
+      font-size: 10.5px;
       font-weight: 500;
       color: #6b7280;
-      margin-top: 3px;
+      margin-top: 2px;
     }
 
     /* Top Right Banner */
@@ -89,25 +97,17 @@
       display: flex;
       justify-content: flex-end;
       align-items: center;
-      overflow: hidden;
-      border-radius: 4px;
     }
-    .banner-wrapper {
-      position: relative;
+    .banner-full-img {
       width: 100%;
-      height: 110px;
-      background: linear-gradient(105deg, transparent 0%, transparent 18%, #e31e24 18%, #e31e24 24%, #0c0e12 24%, #0c0e12 100%);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px 0 70px;
+      height: 56px;
+      border-radius: 8px;
+      object-fit: cover;
+      object-position: center;
+      border: 1px solid #111827;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+      display: block;
     }
-    .banner-img {
-      height: 90px;
-      max-width: 170px;
-      object-fit: contain;
-    }
-    .banner-text-box {
       text-align: right;
     }
     .banner-title {
@@ -473,26 +473,22 @@
   <!-- Top Header Section -->
   <div class="header-container">
     <div class="header-left">
+      {% if logo_data_uri %}
+      <img src="{{ logo_data_uri }}" alt="Livguard" class="main-logo-img">
+      {% else %}
       <div class="logo-row">
         <span class="logo-text-liv">Liv</span><span class="logo-text-guard" style="color: #e31e24;">7</span><span class="logo-text-guard">uard</span>
       </div>
       <div class="logo-tagline">Energy Unlimited</div>
+      {% endif %}
       <div class="quotation-main-title">QUOTATION</div>
       <div class="quotation-subtitle">Reliable Power Solution for a Brighter Tomorrow</div>
     </div>
     
     <div class="header-right">
-      <div class="banner-wrapper">
-        {% if banner_data_uri %}
-        <img src="{{ banner_data_uri }}" alt="Power Backup" class="banner-img">
-        {% else %}
-        <div style="width: 100px; height: 60px;"></div>
-        {% endif %}
-        <div class="banner-text-box">
-          <div class="banner-title">POWER<br>BACKUP</div>
-          <div class="banner-tag">FOR A BRIGHTER<br>TOMORROW</div>
-        </div>
-      </div>
+      {% if banner_data_uri %}
+      <img src="{{ banner_data_uri }}" alt="Livguard Power Banner" class="banner-full-img">
+      {% endif %}
     </div>
   </div>
 
@@ -730,10 +726,14 @@
   <!-- Branded Footer Bar -->
   <div class="brand-footer">
     <div class="footer-left">
+      {% if logo_data_uri %}
+      <img src="{{ logo_data_uri }}" alt="Livguard" style="height: 28px; border-radius: 4px; object-fit: contain;">
+      {% else %}
       <div class="footer-logo">
         <div>Liv<span style="color: #e31e24;">7</span>uard</div>
         <div class="footer-logo-sub">Energy Unlimited</div>
       </div>
+      {% endif %}
       <div class="footer-pill">
         <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
         <span>Trusted Brand</span>

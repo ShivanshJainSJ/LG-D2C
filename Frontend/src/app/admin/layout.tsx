@@ -61,8 +61,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-slate-900 border-r border-slate-800 text-white">
         {/* Brand Header */}
         <div className="h-16 flex items-center px-6 border-b border-slate-800 space-x-3">
-          <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center font-black text-lg text-white shadow-md shadow-red-600/30">
-            LG
+          <div className="h-9 w-9 rounded-lg bg-black border border-slate-800 flex items-center justify-center shadow-md p-1">
+            <img src="/assets/livguard_logo.jpg" alt="Livguard" className="w-full h-full object-contain" />
           </div>
           <div>
             <span className="font-extrabold text-lg text-white tracking-tight">Livguard</span>

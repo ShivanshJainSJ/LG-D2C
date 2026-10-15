@@ -56,8 +56,8 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
       <header className="h-16 bg-slate-950 border-b border-slate-800 text-white px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 shadow-md">
         <div className="flex items-center space-x-3">
           <Link href="/agent/dashboard" className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center font-black text-lg text-white shadow-md shadow-red-600/40">
-              LG
+            <div className="h-9 w-9 rounded-lg bg-black border border-slate-800 flex items-center justify-center shadow-md p-1">
+              <img src="/assets/livguard_logo.jpg" alt="Livguard" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="font-extrabold text-base text-white tracking-tight">Livguard</span>

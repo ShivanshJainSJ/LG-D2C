@@ -78,7 +78,15 @@ class DocumentService:
                 "total_price": float(item.total_price)
             })
 
-        banner_uri = get_image_data_uri("/assets/inverter_battery_combo.jpeg") or get_image_data_uri("/assets/livguard_banner.jpeg")
+        banner_uri = (
+            get_image_data_uri("assets/livguard_banner.jpg") 
+            or get_image_data_uri("assets/livguard_banner.jpeg")
+            or get_image_data_uri("assets/inverter_battery_combo.jpeg")
+        )
+        logo_uri = (
+            get_image_data_uri("assets/livguard_logo.jpg") 
+            or get_image_data_uri("assets/livguard_logo.png")
+        )
 
         html_content = template.render(
             quotation_number=quotation.quotation_number or "DRAFT",
@@ -100,7 +108,8 @@ class DocumentService:
             tax_amount=float(revision.tax_amount),
             grand_total=float(revision.grand_total),
             company=company_settings,
-            banner_data_uri=banner_uri
+            banner_data_uri=banner_uri,
+            logo_data_uri=logo_uri
         )
         return html_content
 

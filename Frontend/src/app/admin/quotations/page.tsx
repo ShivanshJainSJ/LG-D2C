@@ -358,6 +358,31 @@ export default function AdminQuotationsPage() {
                 {/* Active Revision Details */}
                 {activeDetails.revisions[selectedRevIndex] && (
                   <div className="space-y-4">
+                    {/* Branded Header */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-3 gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-24 bg-black rounded-md p-1 flex items-center justify-center shadow-xs">
+                          <img
+                            src="/assets/livguard_logo.jpg"
+                            alt="Livguard"
+                            className="max-h-full max-w-full object-contain"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-slate-900 uppercase">Livguard Quotation Document</div>
+                          <div className="text-[10px] text-slate-500 font-semibold">Official Customer Quotation</div>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0">
+                        <img
+                          src="/assets/livguard_banner.jpg"
+                          alt="Livguard Banner"
+                          className="h-10 w-auto max-w-[220px] rounded object-cover border border-slate-200 shadow-xs"
+                        />
+                      </div>
+                    </div>
+
                     {/* Action Bar for Active Revision */}
                     <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
                       <div>

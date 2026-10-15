@@ -71,8 +71,8 @@ export default function LoginPage() {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center font-black text-2xl text-white mx-auto shadow-lg shadow-red-600/40">
-          LG
+        <div className="w-16 h-16 rounded-2xl bg-black border border-slate-800 flex items-center justify-center mx-auto shadow-xl p-2">
+          <img src="/assets/livguard_logo.jpg" alt="Livguard" className="w-full h-full object-contain" />
         </div>
         <h2 className="mt-4 text-3xl font-black text-white tracking-tight">Livguard Access Portal</h2>
         <p className="mt-2 text-sm text-slate-400">Sign in to manage quotations, products, and orders</p>
