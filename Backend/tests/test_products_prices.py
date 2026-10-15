@@ -50,3 +50,23 @@ def test_product_archive_preserves_record(client):
     # Ensure it is now archived (is_active = False), not deleted
     archived_prod = client.get(f"/api/v1/admin/products/{prod_id}", headers=headers).json()
     assert archived_prod["is_active"] is False
+
+def test_agent_product_sku_search(client):
+    login_res = client.post("/api/v1/auth/login", json={
+        "email": "test_agent@livguard.com",
+        "password": "AgentPass123"
+    })
+    headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
+
+    # Search by SKU
+    search_res = client.get("/api/v1/agent/products/search?q=TEST-100&limit=5", headers=headers)
+    assert search_res.status_code == 200
+    results = search_res.json()
+    assert len(results) >= 1
+    assert any("TEST-100" in p["sku"] for p in results)
+
+    # Empty search returns up to limit
+    all_res = client.get("/api/v1/agent/products/search?limit=10", headers=headers)
+    assert all_res.status_code == 200
+    assert isinstance(all_res.json(), list)
+

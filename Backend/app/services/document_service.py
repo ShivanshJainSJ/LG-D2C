@@ -4,11 +4,47 @@ from playwright.async_api import async_playwright
 from datetime import datetime, timezone
 import json
 
+import base64
+import mimetypes
+
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "documents")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
+
+def get_image_data_uri(path_or_url: str) -> str:
+    if not path_or_url:
+        return ""
+    if path_or_url.startswith("data:"):
+        return path_or_url
+    
+    # Try resolving path against common directories
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    clean_path = path_or_url.lstrip("/\\")
+    
+    candidates = [
+        path_or_url,
+        os.path.join(root_dir, clean_path),
+        os.path.join(root_dir, "Backend", clean_path),
+        os.path.join(root_dir, "Frontend", "public", clean_path),
+        os.path.join(root_dir, "Backend", "uploads", clean_path),
+        os.path.join(root_dir, "Backend", "uploads", "products", os.path.basename(clean_path)),
+        os.path.join(root_dir, "Frontend", "public", "assets", os.path.basename(clean_path)),
+    ]
+    
+    for c in candidates:
+        if os.path.isfile(c):
+            try:
+                mime_type, _ = mimetypes.guess_type(c)
+                if not mime_type:
+                    mime_type = "image/jpeg"
+                with open(c, "rb") as f:
+                    encoded = base64.b64encode(f.read()).decode("utf-8")
+                    return f"data:{mime_type};base64,{encoded}"
+            except Exception:
+                pass
+    return path_or_url
 
 class DocumentService:
     @staticmethod
@@ -16,21 +52,33 @@ class DocumentService:
         template = jinja_env.get_template("quotation.html")
         
         created_dt = revision.created_at or datetime.now(timezone.utc)
-        issue_date_str = created_dt.strftime("%d-%b-%Y")
+        issue_date_str = created_dt.strftime("%d-%m-%Y")
         validity_days = company_settings.quotation_validity_days if company_settings else 15
         expiry_dt = created_dt.timestamp() + (validity_days * 86400)
-        expiry_date_str = datetime.fromtimestamp(expiry_dt, tz=timezone.utc).strftime("%d-%b-%Y")
+        expiry_date_str = datetime.fromtimestamp(expiry_dt, tz=timezone.utc).strftime("%d-%m-%Y")
 
         items_data = []
         for item in revision.items:
+            # Resolve image URI
+            raw_img = item.image_url or (item.product.image_url if item.product else None)
+            data_uri = get_image_data_uri(raw_img) if raw_img else ""
+            
+            # Parse description bullets
+            desc_text = item.description or ""
+            desc_lines = [line.strip().lstrip("•-* ").strip() for line in desc_text.split("\n") if line.strip()]
+
             items_data.append({
                 "product_name": item.product_name,
                 "sku": item.sku,
                 "description": item.description,
+                "desc_lines": desc_lines,
+                "image_data_uri": data_uri,
                 "unit_price": float(item.unit_price),
                 "quantity": item.quantity,
                 "total_price": float(item.total_price)
             })
+
+        banner_uri = get_image_data_uri("/assets/inverter_battery_combo.jpeg") or get_image_data_uri("/assets/livguard_banner.jpeg")
 
         html_content = template.render(
             quotation_number=quotation.quotation_number or "DRAFT",
@@ -51,7 +99,8 @@ class DocumentService:
             tax_rate=float(revision.tax_rate),
             tax_amount=float(revision.tax_amount),
             grand_total=float(revision.grand_total),
-            company=company_settings
+            company=company_settings,
+            banner_data_uri=banner_uri
         )
         return html_content
 

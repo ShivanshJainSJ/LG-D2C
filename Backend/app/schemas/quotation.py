@@ -22,6 +22,7 @@ class QuotationItemResponse(BaseModel):
     sku: str
     product_name: str
     description: Optional[str] = None
+    image_url: Optional[str] = None
     unit_price: Decimal
     quantity: int
     total_price: Decimal

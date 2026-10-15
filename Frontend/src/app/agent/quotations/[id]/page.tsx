@@ -27,6 +27,7 @@ interface QuotationItem {
   sku: string;
   product_name: string;
   description: string | null;
+  image_url?: string | null;
   unit_price: number;
   quantity: number;
   total_price: number;
@@ -338,30 +339,52 @@ export default function AgentQuotationDetailPage() {
               </div>
             </div>
 
-            {/* Line Items Table */}
+            {/* Line Items Table (Exact Reference Format) */}
             <div className="border border-slate-200 rounded-xl overflow-hidden">
               <table className="w-full text-left">
                 <thead className="bg-slate-900 text-white text-[10px] uppercase font-bold">
                   <tr>
-                    <th className="py-2.5 px-3">S.No.</th>
-                    <th className="py-2.5 px-3">Product Name</th>
-                    <th className="py-2.5 px-3">SKU / Model No.</th>
+                    <th className="py-2.5 px-3 text-center">S.No.</th>
+                    <th className="py-2.5 px-3">Product</th>
+                    <th className="py-2.5 px-3 text-center">SKU / Model No.</th>
+                    <th className="py-2.5 px-3">Description</th>
+                    <th className="py-2.5 px-3 text-center">Qty.</th>
                     <th className="py-2.5 px-3 text-right">Unit Price (₹)</th>
-                    <th className="py-2.5 px-3 text-center">Qty</th>
                     <th className="py-2.5 px-3 text-right">Total Price (₹)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {activeRevision.items.map((item, idx) => (
                     <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="py-2.5 px-3 text-slate-400">{idx + 1}</td>
+                      <td className="py-2.5 px-3 text-center text-slate-500 font-bold">{idx + 1}</td>
+                      <td className="py-2.5 px-3">
+                        <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.product_name}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <div className="text-[9px] font-bold text-slate-400">Livguard</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-mono font-bold text-red-600">
+                        {item.sku}
+                      </td>
                       <td className="py-2.5 px-3">
                         <div className="font-bold text-slate-900">{item.product_name}</div>
-                        <div className="text-[10px] text-slate-400">{item.description}</div>
+                        {item.description && (
+                          <div className="text-[10px] text-slate-500 mt-0.5 line-clamp-2">
+                            {item.description.replace(/\n/g, " • ")}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-red-600">{item.sku}</td>
-                      <td className="py-2.5 px-3 text-right">{formatCurrency(item.unit_price)}</td>
                       <td className="py-2.5 px-3 text-center font-bold text-slate-800">{item.quantity}</td>
+                      <td className="py-2.5 px-3 text-right font-medium text-slate-700">
+                        {formatCurrency(item.unit_price)}
+                      </td>
                       <td className="py-2.5 px-3 text-right font-black text-slate-900">
                         {formatCurrency(item.total_price)}
                       </td>

@@ -51,7 +51,7 @@ async def test_pdf_and_png_generation(db_session):
     html_content = DocumentService.render_quotation_html(quote, rev, company)
     assert "LG/26/9999" in html_content
     assert "LG-LX-100AH" in html_content
-    assert "₹47790.00" in html_content
+    assert "47,790" in html_content
 
     # Render PDF
     pdf_bytes = await DocumentService.generate_pdf_from_html(html_content)

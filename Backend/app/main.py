@@ -82,55 +82,70 @@ def init_db_and_seed():
             db.add(agent)
             db.flush()
 
-        # 5. Seed Real Livguard Products (Lithium batteries, Inverters, Combos)
+        # 5. Seed Real Livguard Products (Combos, Inverters, Lead-Acid and Lithium Batteries)
         products_data = [
             {
-                "sku": "LG-LX-100AH",
-                "name": "Livguard Lithium-X 100Ah / 12.8V Battery",
-                "brand": "Livguard",
-                "category": "Battery",
-                "description": "Smart LiFePO4 Inverter Battery with 3X longer life, ultra-fast charging, and zero maintenance.",
-                "price": Decimal("34999.00")
-            },
-            {
-                "sku": "LG-LX-150AH",
-                "name": "Livguard Lithium-X 150Ah / 12.8V Battery",
-                "brand": "Livguard",
-                "category": "Battery",
-                "description": "High-capacity Lithium inverter battery engineered for heavy loads and high backup demand.",
-                "price": Decimal("48500.00")
-            },
-            {
-                "sku": "LG-XDT-1200",
-                "name": "Livguard Lithium-XDT 1200 Smart Inverter",
-                "brand": "Livguard",
-                "category": "Inverter",
-                "description": "Pure Sine Wave Smart Inverter with dynamic LCD display and multi-mode power optimization.",
-                "price": Decimal("11200.00")
-            },
-            {
-                "sku": "LG-XDT-1650",
-                "name": "Livguard Lithium-XDT 1650 Heavy Duty Inverter",
-                "brand": "Livguard",
-                "category": "Inverter",
-                "description": "Heavy duty commercial & home pure sine wave inverter with dual battery support.",
-                "price": Decimal("14800.00")
-            },
-            {
-                "sku": "LG-COMBO-PRO100",
-                "name": "Livguard Smart Pro Combo 1200 + 100Ah Lithium-X",
+                "sku": "LG-SET-1",
+                "name": "Livguard Inverter + Battery Set – 1",
                 "brand": "Livguard",
                 "category": "Combo",
-                "description": "Complete Plug-and-play Backup Combo: XDT 1200 Inverter paired with 100Ah Lithium-X Battery.",
-                "price": Decimal("44999.00")
+                "description": "• Livguard Inverter (1000 VA)\n• Livguard Invertuff Battery (150 Ah)\n• Advanced Sine Wave Technology\n• Fast Charging\n• Longer Backup & Life",
+                "image_url": "/uploads/products/inverter_battery_combo.jpeg",
+                "price": Decimal("22500.00")
             },
             {
-                "sku": "LG-SLR-330W",
-                "name": "Livguard Mono-PERC Solar Panel 330W",
+                "sku": "LG-SET-2",
+                "name": "Livguard Inverter + Battery Set – 2",
                 "brand": "Livguard",
-                "category": "Solar",
-                "description": "High-efficiency A-grade mono-PERC crystalline solar panel with 25-year performance warranty.",
-                "price": Decimal("9200.00")
+                "category": "Combo",
+                "description": "• Livguard Inverter (1500 VA)\n• Livguard Invertuff Battery (200 Ah)\n• Advanced Sine Wave Technology\n• Fast Charging\n• Longer Backup & Life",
+                "image_url": "/uploads/products/inverter_battery_combo.jpeg",
+                "price": Decimal("28500.00")
+            },
+            {
+                "sku": "LG-INV-1000",
+                "name": "Livguard Pure Sine Wave Inverter 1000 VA",
+                "brand": "Livguard",
+                "category": "Inverter",
+                "description": "• Pure Sine Wave Technology\n• Smart Dynamic Display\n• Fast Charging & Surge Protection\n• Silent Operation",
+                "image_url": "/uploads/products/inverter.jpeg",
+                "price": Decimal("8500.00")
+            },
+            {
+                "sku": "LG-INV-1500",
+                "name": "Livguard Heavy Duty Inverter 1500 VA",
+                "brand": "Livguard",
+                "category": "Inverter",
+                "description": "• Pure Sine Wave Technology\n• Heavy Duty Load Support\n• Fast Charging & Low Maintenance",
+                "image_url": "/uploads/products/inverter.jpeg",
+                "price": Decimal("11500.00")
+            },
+            {
+                "sku": "LG-BAT-150AH",
+                "name": "Livguard Invertuff Tall Tubular Battery 150 Ah",
+                "brand": "Livguard",
+                "category": "Battery",
+                "description": "• 150 Ah Deep Cycle Tall Tubular\n• Rugged Design & 3D Grid Alloy\n• Longer Backup & Extended Life",
+                "image_url": "/uploads/products/lead_acid_battery.jpeg",
+                "price": Decimal("14000.00")
+            },
+            {
+                "sku": "LG-BAT-200AH",
+                "name": "Livguard Invertuff Tall Tubular Battery 200 Ah",
+                "brand": "Livguard",
+                "category": "Battery",
+                "description": "• 200 Ah Heavy Duty Tubular\n• High Backup Duration\n• Ultra Low Maintenance",
+                "image_url": "/uploads/products/lead_acid_battery.jpeg",
+                "price": Decimal("17000.00")
+            },
+            {
+                "sku": "LG-LX-100AH",
+                "name": "Livguard Smart Lithium Battery 100Ah / 12.8V",
+                "brand": "Livguard",
+                "category": "Battery",
+                "description": "• LiFePO4 Smart Battery\n• 3X Longer Life Cycle\n• Superfast 2-Hour Charging\n• Zero Maintenance",
+                "image_url": "/uploads/products/lithium_battery.jpeg",
+                "price": Decimal("34999.00")
             }
         ]
 
@@ -143,6 +158,7 @@ def init_db_and_seed():
                     brand=p_data["brand"],
                     category=p_data["category"],
                     description=p_data["description"],
+                    image_url=p_data["image_url"],
                     base_price=p_data["price"],
                     is_active=True
                 )
@@ -155,6 +171,12 @@ def init_db_and_seed():
                     changed_by_id=admin.id,
                     reason="Initial catalog seeding"
                 ))
+            else:
+                # Update image_url and description if needed
+                if not existing_p.image_url:
+                    existing_p.image_url = p_data["image_url"]
+                if not existing_p.description:
+                    existing_p.description = p_data["description"]
 
         # 6. Seed Sample Active Coupon
         coupon = db.query(Coupon).filter(Coupon.code == "LIVGUARD10").first()
