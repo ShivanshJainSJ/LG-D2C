@@ -1,6 +1,7 @@
 import os
+import asyncio
 from jinja2 import Environment, FileSystemLoader
-from playwright.async_api import async_playwright
+from playwright.sync_api import sync_playwright
 from datetime import datetime, timezone
 import json
 
@@ -153,29 +154,34 @@ class DocumentService:
 
     @staticmethod
     async def generate_pdf_from_html(html_content: str) -> bytes:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            await page.set_content(html_content, wait_until="networkidle")
-            pdf_bytes = await page.pdf(
-                format="A4",
-                print_background=True,
-                prefer_css_page_size=True,
-                margin={"top": "0mm", "right": "0mm", "bottom": "0mm", "left": "0mm"}
-            )
-            await browser.close()
-            return pdf_bytes
+        def _render_pdf() -> bytes:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                page.set_content(html_content, wait_until="networkidle")
+                pdf_bytes = page.pdf(
+                    format="A4",
+                    print_background=True,
+                    prefer_css_page_size=True,
+                    margin={"top": "0mm", "right": "0mm", "bottom": "0mm", "left": "0mm"}
+                )
+                browser.close()
+                return pdf_bytes
+
+        return await asyncio.to_thread(_render_pdf)
 
     @staticmethod
     async def generate_png_from_html(html_content: str) -> bytes:
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            # High-DPI viewport (2x resolution for crisp WhatsApp sharing)
-            page = await browser.new_page(
-                viewport={"width": 794, "height": 1123},
-                device_scale_factor=2
-            )
-            await page.set_content(html_content, wait_until="networkidle")
-            png_bytes = await page.screenshot(type="png", full_page=True)
-            await browser.close()
-            return png_bytes
+        def _render_png() -> bytes:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page(
+                    viewport={"width": 794, "height": 1123},
+                    device_scale_factor=2
+                )
+                page.set_content(html_content, wait_until="networkidle")
+                png_bytes = page.screenshot(type="png", full_page=True)
+                browser.close()
+                return png_bytes
+
+        return await asyncio.to_thread(_render_png)

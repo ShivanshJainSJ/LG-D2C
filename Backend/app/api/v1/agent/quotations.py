@@ -469,17 +469,23 @@ async def download_my_quotation_pdf(
     if not revision:
         raise HTTPException(status_code=404, detail="Revision not found")
 
-    company_settings = db.query(CompanySettings).order_by(CompanySettings.version.desc()).first()
-    html_content = DocumentService.render_quotation_html(quotation, revision, company_settings)
-    pdf_bytes = await DocumentService.generate_pdf_from_html(html_content)
+    try:
+        company_settings = db.query(CompanySettings).order_by(CompanySettings.version.desc()).first()
+        html_content = DocumentService.render_quotation_html(quotation, revision, company_settings)
+        pdf_bytes = await DocumentService.generate_pdf_from_html(html_content)
 
-    clean_num = (quotation.quotation_number or "draft").replace("/", "_")
-    filename = f"Livguard_Quotation_{clean_num}_Rev{revision.revision_number}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+        clean_num = (quotation.quotation_number or "draft").replace("/", "_")
+        filename = f"Livguard_Quotation_{clean_num}_Rev{revision.revision_number}.pdf"
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        import traceback
+        err_msg = traceback.format_exc()
+        print("ERROR IN PDF DOWNLOAD:\n", err_msg)
+        raise HTTPException(status_code=500, detail=f"PDF generation error: {repr(e)} - {type(e).__name__}")
 
 @router.get("/{quotation_id}/revisions/{revision_id}/png")
 async def download_my_quotation_png(
@@ -498,14 +504,20 @@ async def download_my_quotation_png(
     if not revision:
         raise HTTPException(status_code=404, detail="Revision not found")
 
-    company_settings = db.query(CompanySettings).order_by(CompanySettings.version.desc()).first()
-    html_content = DocumentService.render_quotation_html(quotation, revision, company_settings)
-    png_bytes = await DocumentService.generate_png_from_html(html_content)
+    try:
+        company_settings = db.query(CompanySettings).order_by(CompanySettings.version.desc()).first()
+        html_content = DocumentService.render_quotation_html(quotation, revision, company_settings)
+        png_bytes = await DocumentService.generate_png_from_html(html_content)
 
-    clean_num = (quotation.quotation_number or "draft").replace("/", "_")
-    filename = f"Livguard_Quotation_{clean_num}_Rev{revision.revision_number}.png"
-    return Response(
-        content=png_bytes,
-        media_type="image/png",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+        clean_num = (quotation.quotation_number or "draft").replace("/", "_")
+        filename = f"Livguard_Quotation_{clean_num}_Rev{revision.revision_number}.png"
+        return Response(
+            content=png_bytes,
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except Exception as e:
+        import traceback
+        err_msg = traceback.format_exc()
+        print("ERROR IN PNG DOWNLOAD:\n", err_msg)
+        raise HTTPException(status_code=500, detail=f"PNG generation error: {repr(e)} - {type(e).__name__}")
