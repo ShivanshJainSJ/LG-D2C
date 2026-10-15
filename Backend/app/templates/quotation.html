@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Livguard Quotation - {{ quotation_number }}</title>
@@ -8,12 +9,14 @@
       size: A4 portrait;
       margin: 0;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
     }
+
     body {
       background-color: #ffffff;
       color: #111827;
@@ -32,10 +35,12 @@
       margin-bottom: 12px;
       position: relative;
     }
+
     .header-left {
       width: 50%;
       padding-top: 2px;
     }
+
     .main-logo-img {
       height: 52px;
       max-width: 160px;
@@ -44,12 +49,14 @@
       display: block;
       margin-bottom: 4px;
     }
+
     .logo-row {
       display: flex;
       align-items: baseline;
       gap: 4px;
       margin-bottom: 2px;
     }
+
     .logo-text-liv {
       font-size: 32px;
       font-weight: 900;
@@ -58,6 +65,7 @@
       letter-spacing: -1px;
       line-height: 1;
     }
+
     .logo-text-guard {
       font-size: 32px;
       font-weight: 900;
@@ -66,6 +74,7 @@
       letter-spacing: -1px;
       line-height: 1;
     }
+
     .logo-tagline {
       font-size: 11px;
       font-weight: 700;
@@ -74,6 +83,7 @@
       letter-spacing: 0.2px;
       margin-bottom: 12px;
     }
+
     .quotation-main-title {
       font-size: 24px;
       font-weight: 900;
@@ -83,6 +93,7 @@
       line-height: 1.1;
       margin-top: 4px;
     }
+
     .quotation-subtitle {
       font-size: 10.5px;
       font-weight: 500;
@@ -98,6 +109,7 @@
       justify-content: flex-end;
       align-items: center;
     }
+
     .banner-full-img {
       width: 100%;
       height: 56px;
@@ -108,68 +120,71 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
       display: block;
     }
-      text-align: right;
-    }
-    .banner-title {
-      font-size: 15px;
-      font-weight: 900;
-      color: #ffffff;
-      line-height: 1.1;
-      text-transform: uppercase;
-    }
-    .banner-tag {
-      font-size: 10.5px;
-      font-weight: 800;
-      color: #e31e24;
-      line-height: 1.2;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
 
-    /* Customer and Quotation Info Panels */
-    .info-panels-grid {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 14px;
-    }
-    .info-card {
-      flex: 1;
+    /* Customer & Quotation Info (Combined Single Panel) */
+    .combined-info-card {
       background-color: #f5f6f8;
       border-radius: 12px;
-      padding: 12px 16px;
+      padding: 12px 18px;
+      margin-bottom: 14px;
     }
+
+    .combined-info-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .combined-info-col {
+      flex: 1;
+    }
+
+    .combined-info-divider {
+      width: 1px;
+      background-color: #e2e8f0;
+      align-self: stretch;
+      margin: 2px 8px;
+    }
+
     .info-card-title {
       font-size: 13px;
       font-weight: 800;
       color: #e31e24;
       margin-bottom: 8px;
     }
+
     .info-table {
       width: 100%;
       border-collapse: collapse;
     }
+
     .info-table td {
       padding: 3px 0;
       font-size: 10.5px;
       vertical-align: top;
     }
+
     .info-table td.label {
       color: #1f2937;
       font-weight: 600;
       width: 110px;
       white-space: nowrap;
     }
+
     .info-table td.colon {
       width: 12px;
       color: #4b5563;
       font-weight: 600;
     }
+
     .info-table td.val {
       color: #111827;
       font-weight: 600;
       border-bottom: 1px dotted #cbd5e1;
       padding-bottom: 2px;
     }
+
     .info-table td.val-clean {
       color: #111827;
       font-weight: 700;
@@ -179,11 +194,13 @@
     .table-container {
       margin-bottom: 14px;
     }
+
     .product-table {
       width: 100%;
       border-collapse: collapse;
       border: 1px solid #d1d5db;
     }
+
     .product-table th {
       background-color: #0b0f17;
       color: #ffffff;
@@ -193,9 +210,11 @@
       text-align: center;
       border-right: 1px solid #2d3748;
     }
+
     .product-table th:last-child {
       border-right: none;
     }
+
     .product-table td {
       border: 1px solid #e5e7eb;
       padding: 8px 8px;
@@ -203,16 +222,54 @@
       vertical-align: middle;
       color: #1f2937;
     }
+
     .product-table tr:nth-child(even) {
       background-color: #fafafa;
     }
-    .col-sno { width: 5%; text-align: center; font-weight: 700; }
-    .col-product { width: 18%; text-align: center; }
-    .col-sku { width: 14%; text-align: center; font-weight: 600; color: #374151; font-family: monospace; font-size: 10px; }
-    .col-desc { width: 33%; text-align: left; }
-    .col-qty { width: 6%; text-align: center; font-weight: 700; }
-    .col-price { width: 12%; text-align: right; font-weight: 600; }
-    .col-total { width: 12%; text-align: right; font-weight: 700; color: #111827; }
+
+    .col-sno {
+      width: 5%;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .col-product {
+      width: 18%;
+      text-align: center;
+    }
+
+    .col-sku {
+      width: 14%;
+      text-align: center;
+      font-weight: 600;
+      color: #374151;
+      font-family: monospace;
+      font-size: 10px;
+    }
+
+    .col-desc {
+      width: 33%;
+      text-align: left;
+    }
+
+    .col-qty {
+      width: 6%;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .col-price {
+      width: 12%;
+      text-align: right;
+      font-weight: 600;
+    }
+
+    .col-total {
+      width: 12%;
+      text-align: right;
+      font-weight: 700;
+      color: #111827;
+    }
 
     .item-thumbnail {
       max-height: 75px;
@@ -220,12 +277,14 @@
       object-fit: contain;
       display: inline-block;
     }
+
     .desc-title {
       font-weight: 800;
       font-size: 11px;
       color: #111827;
       margin-bottom: 4px;
     }
+
     .desc-bullets {
       list-style-type: disc;
       padding-left: 14px;
@@ -234,6 +293,7 @@
       color: #374151;
       line-height: 1.45;
     }
+
     .desc-bullets li {
       margin-bottom: 1.5px;
     }
@@ -246,6 +306,7 @@
       margin-bottom: 14px;
       gap: 16px;
     }
+
     .benefits-box {
       flex: 1;
       display: flex;
@@ -254,6 +315,7 @@
       padding: 10px 4px;
       background: #ffffff;
     }
+
     .benefit-item {
       display: flex;
       flex-direction: column;
@@ -261,6 +323,7 @@
       text-align: center;
       width: 75px;
     }
+
     .benefit-icon-circle {
       width: 36px;
       height: 36px;
@@ -272,6 +335,7 @@
       margin-bottom: 4px;
       color: #e31e24;
     }
+
     .benefit-label {
       font-size: 9.5px;
       font-weight: 700;
@@ -285,28 +349,34 @@
       border: 1px solid #d1d5db;
       border-collapse: collapse;
     }
+
     .totals-table {
       width: 100%;
       border-collapse: collapse;
     }
+
     .totals-table td {
       padding: 6px 12px;
       font-size: 11px;
       border-bottom: 1px solid #e5e7eb;
     }
+
     .totals-table td.total-label {
       font-weight: 600;
       color: #374151;
       text-align: left;
     }
+
     .totals-table td.total-value {
       font-weight: 700;
       color: #111827;
       text-align: right;
     }
+
     .totals-table tr.grand-total-row {
       background-color: #e31e24;
     }
+
     .totals-table tr.grand-total-row td {
       color: #ffffff !important;
       font-size: 13px;
@@ -315,94 +385,78 @@
       border: none;
     }
 
-    /* Terms and Contact / Signatures */
+    /* Terms and Contact Section (Terms on top, Contact below) */
     .bottom-section {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
-    .terms-col {
-      flex: 1.1;
+
+    .terms-card {
       background-color: #f5f6f8;
       border-radius: 12px;
-      padding: 12px 16px;
+      padding: 10px 16px;
+      margin-bottom: 8px;
     }
+
     .terms-title {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 800;
       color: #e31e24;
       margin-bottom: 6px;
     }
+
     .terms-list {
-      padding-left: 14px;
-      font-size: 9px;
+      padding-left: 16px;
+      font-size: 8.5px;
       color: #374151;
       line-height: 1.45;
+      column-count: 2;
+      column-gap: 28px;
     }
+
     .terms-list li {
       margin-bottom: 2px;
     }
 
-    .contact-sig-col {
-      flex: 0.9;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-    .contact-card {
+    /* Contact Box below Terms */
+    .contact-card-below {
       background-color: #fbf2f2;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
+      border: 1px solid #fee2e2;
+      border-radius: 8px;
+      padding: 7px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
+
     .contact-card-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       color: #e31e24;
-      margin-bottom: 4px;
+      white-space: nowrap;
     }
+
+    .contact-card-items-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
     .contact-card-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 9.5px;
+      gap: 5px;
+      font-size: 8.5px;
       font-weight: 600;
       color: #1f2937;
-      margin-bottom: 3px;
-    }
-    .contact-card-item svg {
-      width: 12px;
-      height: 12px;
-      fill: #e31e24;
-      flex-shrink: 0;
     }
 
-    .signatures-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      margin-top: 6px;
-    }
-    .sig-block {
-      flex: 1;
-      text-align: center;
-    }
-    .sig-line {
-      border-bottom: 1px solid #9ca3af;
-      height: 28px;
-      margin-bottom: 4px;
-    }
-    .sig-box {
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
-      height: 34px;
-      border-radius: 6px;
-      margin-bottom: 4px;
-    }
-    .sig-text {
-      font-size: 9.5px;
-      font-weight: 700;
-      color: #374151;
+    .contact-card-item svg {
+      width: 11px;
+      height: 11px;
+      fill: #e31e24;
+      flex-shrink: 0;
     }
 
     /* Branded Footer Bar */
@@ -416,6 +470,7 @@
       overflow: hidden;
       margin-top: auto;
     }
+
     .footer-left {
       display: flex;
       align-items: center;
@@ -423,6 +478,7 @@
       padding-left: 14px;
       color: #ffffff;
     }
+
     .footer-logo {
       font-size: 16px;
       font-weight: 900;
@@ -432,6 +488,7 @@
       flex-direction: column;
       line-height: 1;
     }
+
     .footer-logo-sub {
       font-size: 6px;
       font-weight: 700;
@@ -440,6 +497,7 @@
       letter-spacing: 0.5px;
       margin-top: 1px;
     }
+
     .footer-pill {
       display: flex;
       align-items: center;
@@ -448,11 +506,13 @@
       font-weight: 700;
       color: #e5e7eb;
     }
+
     .footer-pill svg {
       width: 12px;
       height: 12px;
       fill: #ffffff;
     }
+
     .footer-right {
       height: 100%;
       background: #e31e24;
@@ -468,6 +528,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <!-- Top Header Section -->
@@ -477,14 +538,15 @@
       <img src="{{ logo_data_uri }}" alt="Livguard" class="main-logo-img">
       {% else %}
       <div class="logo-row">
-        <span class="logo-text-liv">Liv</span><span class="logo-text-guard" style="color: #e31e24;">7</span><span class="logo-text-guard">uard</span>
+        <span class="logo-text-liv">Liv</span><span class="logo-text-guard" style="color: #e31e24;">7</span><span
+          class="logo-text-guard">uard</span>
       </div>
       <div class="logo-tagline">Energy Unlimited</div>
       {% endif %}
       <div class="quotation-main-title">QUOTATION</div>
       <div class="quotation-subtitle">Reliable Power Solution for a Brighter Tomorrow</div>
     </div>
-    
+
     <div class="header-right">
       {% if banner_data_uri %}
       <img src="{{ banner_data_uri }}" alt="Livguard Power Banner" class="banner-full-img">
@@ -492,65 +554,55 @@
     </div>
   </div>
 
-  <!-- Customer Details & Quotation Info Panels -->
-  <div class="info-panels-grid">
-    <!-- Left Card: Customer Details -->
-    <div class="info-card">
-      <div class="info-card-title">Customer Details</div>
-      <table class="info-table">
-        <tr>
-          <td class="label">Customer Name</td>
-          <td class="colon">:</td>
-          <td class="val">{{ customer_name }}</td>
-        </tr>
-        <tr>
-          <td class="label">Contact Number</td>
-          <td class="colon">:</td>
-          <td class="val">{{ customer_mobile }}</td>
-        </tr>
-        <tr>
-          <td class="label">Address</td>
-          <td class="colon">:</td>
-          <td class="val">{{ customer_address or '-' }}</td>
-        </tr>
-        <tr>
-          <td class="label">Date</td>
-          <td class="colon">:</td>
-          <td class="val">{{ issue_date }}</td>
-        </tr>
-      </table>
-    </div>
+  <!-- Customer & Quotation Details (Combined Single Panel) -->
+  <div class="combined-info-card">
+    <div class="combined-info-grid">
+      <!-- Left Column: Customer Details -->
+      <div class="combined-info-col">
+        <div class="info-card-title">Customer Details</div>
+        <table class="info-table">
+          <tr>
+            <td class="label">Customer Name</td>
+            <td class="colon">:</td>
+            <td class="val">{{ customer_name }}</td>
+          </tr>
+          <tr>
+            <td class="label">Contact Number</td>
+            <td class="colon">:</td>
+            <td class="val">{{ customer_mobile }}</td>
+          </tr>
+          <tr>
+            <td class="label">Address</td>
+            <td class="colon">:</td>
+            <td class="val">{{ customer_address or '-' }}</td>
+          </tr>
+        </table>
+      </div>
 
-    <!-- Right Card: Quotation Metadata -->
-    <div class="info-card">
-      <div style="height: 16px;"></div>
-      <table class="info-table">
-        <tr>
-          <td class="label">Quotation No.</td>
-          <td class="colon">:</td>
-          <td class="val-clean">{{ quotation_number }}</td>
-        </tr>
-        <tr>
-          <td class="label">Date</td>
-          <td class="colon">:</td>
-          <td class="val-clean">{{ issue_date }}</td>
-        </tr>
-        <tr>
-          <td class="label">Valid Till</td>
-          <td class="colon">:</td>
-          <td class="val-clean">{{ expiry_date }}</td>
-        </tr>
-        <tr>
-          <td class="label">Prepared By</td>
-          <td class="colon">:</td>
-          <td class="val">{{ agent_name }}</td>
-        </tr>
-        <tr>
-          <td class="label">Contact No.</td>
-          <td class="colon">:</td>
-          <td class="val">{{ agent_mobile }}</td>
-        </tr>
-      </table>
+      <!-- Divider -->
+      <div class="combined-info-divider"></div>
+
+      <!-- Right Column: Quotation Details -->
+      <div class="combined-info-col">
+        <div class="info-card-title" style="color: #1f2937;">Quotation Details</div>
+        <table class="info-table">
+          <tr>
+            <td class="label">Quotation No.</td>
+            <td class="colon">:</td>
+            <td class="val-clean" style="color: #e31e24; font-size: 11px;">{{ quotation_number }}</td>
+          </tr>
+          <tr>
+            <td class="label">Date</td>
+            <td class="colon">:</td>
+            <td class="val-clean">{{ issue_date }}</td>
+          </tr>
+          <tr>
+            <td class="label">Valid Until</td>
+            <td class="colon">:</td>
+            <td class="val-clean">{{ expiry_date }}</td>
+          </tr>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -608,9 +660,10 @@
       <!-- 1. Reliable Performance -->
       <div class="benefit-item">
         <div class="benefit-icon-circle">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <polyline points="9 12 11 14 15 10"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            <polyline points="9 12 11 14 15 10" />
           </svg>
         </div>
         <div class="benefit-label">Reliable<br>Performance</div>
@@ -619,9 +672,10 @@
       <!-- 2. Longer Backup -->
       <div class="benefit-item">
         <div class="benefit-icon-circle">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
           </svg>
         </div>
         <div class="benefit-label">Longer<br>Backup</div>
@@ -631,7 +685,7 @@
       <div class="benefit-item">
         <div class="benefit-icon-circle">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
           </svg>
         </div>
         <div class="benefit-label">Fast<br>Charging</div>
@@ -640,9 +694,11 @@
       <!-- 4. Low Maintenance -->
       <div class="benefit-item">
         <div class="benefit-icon-circle">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </div>
         <div class="benefit-label">Low<br>Maintenance</div>
@@ -674,10 +730,10 @@
     </div>
   </div>
 
-  <!-- Bottom Terms & Contact / Signature Section -->
+  <!-- Bottom Terms & Contact Section -->
   <div class="bottom-section">
-    <!-- Terms & Conditions Card -->
-    <div class="terms-col">
+    <!-- Terms & Conditions Card (Full Width) -->
+    <div class="terms-card">
       <div class="terms-title">Terms & Conditions</div>
       <ol class="terms-list">
         <li>Prices are inclusive of standard installation (if applicable).</li>
@@ -690,34 +746,30 @@
       </ol>
     </div>
 
-    <!-- Contact & Signatures Column -->
-    <div class="contact-sig-col">
-      <!-- Contact Box -->
-      <div class="contact-card">
-        <div class="contact-card-title">For any queries, contact:</div>
+    <!-- For any queries, contact: (Placed Below Terms) -->
+    <div class="contact-card-below">
+      <div class="contact-card-title">For any queries, contact:</div>
+      <div class="contact-card-items-row">
         <div class="contact-card-item">
-          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-          <span>Livguard Solar Pro Plus</span>
-        </div>
-        <div class="contact-card-item">
-          <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-          <span>+91 98765 43210</span>
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+          <span>Plot No. 221, Phase-I, Udyog Vihar, Gurgaon 122016 Haryana, India</span>
         </div>
         <div class="contact-card-item">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
-          <span>sales@livguard.com</span>
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+          </svg>
+          <span>+911244987400</span>
         </div>
-      </div>
-
-      <!-- Signature Blocks -->
-      <div class="signatures-row">
-        <div class="sig-block">
-          <div class="sig-line"></div>
-          <div class="sig-text">Authorized Signature</div>
-        </div>
-        <div class="sig-block">
-          <div class="sig-box"></div>
-          <div class="sig-text">Customer Signature</div>
+        <div class="contact-card-item">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+          </svg>
+          <span>marketing@livguard.com</span>
         </div>
       </div>
     </div>
@@ -735,26 +787,34 @@
       </div>
       {% endif %}
       <div class="footer-pill">
-        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" />
+        </svg>
         <span>Trusted Brand</span>
       </div>
       <div class="footer-pill">
-        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+        </svg>
         <span>Pan India Support</span>
       </div>
       <div class="footer-pill">
-        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <svg viewBox="0 0 24 24">
+          <path
+            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+        </svg>
         <span>Wide Service Network</span>
       </div>
     </div>
 
     <div class="footer-right">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
       </svg>
       <span>POWERING A BETTER TOMORROW</span>
     </div>
-  </div>
-
 </body>
+
 </html>

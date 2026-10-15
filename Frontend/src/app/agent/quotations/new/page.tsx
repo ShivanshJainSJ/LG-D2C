@@ -557,41 +557,43 @@ export default function NewQuotationPage() {
                 </div>
               </div>
 
-              {/* Customer & Quotation Info Panels (Rounded Gray Cards) */}
-              <div className="grid grid-cols-2 gap-2 text-[10.5px]">
-                {/* Customer Details */}
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
-                  <div className="text-[10px] font-black text-red-600 uppercase">Customer Details</div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Name:</span>
-                    <span className="font-bold text-slate-900 truncate max-w-[100px]">
-                      {customerName || "—"}
-                    </span>
+              {/* Customer & Quotation Details (Combined Single Panel) */}
+              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <div className="grid grid-cols-2 gap-3 text-[10.5px]">
+                  {/* Left: Customer Details */}
+                  <div className="space-y-1">
+                    <div className="text-[10px] font-black text-red-600 uppercase">Customer Details</div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Name:</span>
+                      <span className="font-bold text-slate-900 truncate max-w-[90px]">
+                        {customerName || "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Contact:</span>
+                      <span className="font-semibold text-slate-800">{customerMobile || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Address:</span>
+                      <span className="text-slate-700 truncate max-w-[90px]">{customerAddress || "—"}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Contact:</span>
-                    <span className="font-semibold text-slate-800">{customerMobile || "—"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Address:</span>
-                    <span className="text-slate-700 truncate max-w-[100px]">{customerAddress || "—"}</span>
-                  </div>
-                </div>
 
-                {/* Quotation Info */}
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1">
-                  <div className="text-[10px] font-black text-slate-700 uppercase">Quotation Info</div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Quote No:</span>
-                    <span className="font-mono font-bold text-red-600">LGQ/2026/001</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Validity:</span>
-                    <span className="font-semibold text-slate-800">15 Days</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Tax Policy:</span>
-                    <span className="font-semibold text-slate-800">GST 18%</span>
+                  {/* Right: Quotation Details */}
+                  <div className="space-y-1 pl-3 border-l border-slate-200">
+                    <div className="text-[10px] font-black text-slate-700 uppercase">Quotation Details</div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Quote No:</span>
+                      <span className="font-mono font-bold text-red-600">LGQ/2026/001</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Date:</span>
+                      <span className="font-semibold text-slate-800">Today</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Validity:</span>
+                      <span className="font-semibold text-slate-800">15 Days</span>
+                    </div>
                   </div>
                 </div>
               </div>
