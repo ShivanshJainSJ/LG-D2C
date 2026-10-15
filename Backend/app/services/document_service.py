@@ -89,11 +89,14 @@ class DocumentService:
             or get_image_data_uri("assets/livguard_logo.png")
         )
 
+        total_quantity = sum(item.quantity for item in revision.items)
+
         html_content = template.render(
             quotation_number=quotation.quotation_number or "DRAFT",
             revision_label=revision.revision_label,
             issue_date=issue_date_str,
             expiry_date=expiry_date_str,
+            total_quantity=total_quantity,
             customer_name=quotation.customer_name,
             customer_mobile=quotation.customer_mobile,
             customer_email=quotation.customer_email,

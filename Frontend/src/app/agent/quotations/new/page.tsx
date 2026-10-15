@@ -591,8 +591,10 @@ export default function NewQuotationPage() {
                       <span className="font-semibold text-slate-800">Today</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Validity:</span>
-                      <span className="font-semibold text-slate-800">15 Days</span>
+                      <span className="text-slate-500">No. of Products:</span>
+                      <span className="font-bold text-slate-900">
+                        {items.reduce((sum, itm) => sum + itm.quantity, 0)}
+                      </span>
                     </div>
                   </div>
                 </div>
