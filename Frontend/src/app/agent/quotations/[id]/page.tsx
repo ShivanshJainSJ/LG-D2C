@@ -311,6 +311,31 @@ export default function AgentQuotationDetailPage() {
         {/* Active Revision Snapshot */}
         {activeRevision && (
           <div className="p-5 sm:p-6 space-y-6 text-xs">
+            {/* Document Branded Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-4 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-28 bg-black rounded-lg p-1.5 flex items-center justify-center shadow-sm">
+                  <img
+                    src="/assets/livguard_logo.jpg"
+                    alt="Livguard"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">LIVGUARD QUOTATION</h2>
+                  <p className="text-[11px] text-slate-500 font-semibold">Powering the homes of tomorrow</p>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                <img
+                  src="/assets/livguard_banner.jpg"
+                  alt="Livguard Inverters & Batteries"
+                  className="h-12 sm:h-14 w-auto max-w-[280px] rounded-lg object-cover border border-slate-200 shadow-sm"
+                />
+              </div>
+            </div>
+
             {/* Meta Info Panel */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div>

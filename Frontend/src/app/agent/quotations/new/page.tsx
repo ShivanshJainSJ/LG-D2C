@@ -532,21 +532,28 @@ export default function NewQuotationPage() {
 
             {/* Document Body */}
             <div className="p-4 sm:p-5 space-y-3.5 text-xs bg-white text-slate-900">
-              {/* Header: Logo & Title */}
-              <div className="flex justify-between items-start border-b border-slate-100 pb-3">
-                <div>
-                  <div className="text-xl font-black text-slate-900 tracking-tight italic">
-                    Liv<span className="text-red-600">7</span>uard
+              {/* Header: Official Logo & Banner */}
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3 gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-24 bg-black rounded p-1 flex items-center justify-center">
+                    <img
+                      src="/assets/livguard_logo.jpg"
+                      alt="Livguard"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </div>
-                  <div className="text-[9px] font-bold text-slate-700 tracking-wider">Energy Unlimited</div>
-                  <div className="text-sm font-black text-slate-900 uppercase mt-2">QUOTATION</div>
-                  <div className="text-[9.5px] text-slate-500">Reliable Power Solution for a Brighter Tomorrow</div>
+                  <div>
+                    <div className="text-xs font-black text-slate-900 uppercase tracking-tight">QUOTATION</div>
+                    <div className="text-[8px] text-slate-500 font-semibold">Reliable Power Solution</div>
+                  </div>
                 </div>
 
-                <div className="text-right">
-                  <div className="inline-block bg-slate-900 text-white text-[9px] font-bold px-2 py-1 rounded border-l-2 border-red-600">
-                    POWER BACKUP
-                  </div>
+                <div className="shrink-0">
+                  <img
+                    src="/assets/livguard_banner.jpg"
+                    alt="Livguard Inverters & Batteries"
+                    className="h-10 w-auto max-w-[150px] rounded object-cover border border-slate-200 shadow-xs"
+                  />
                 </div>
               </div>
 
