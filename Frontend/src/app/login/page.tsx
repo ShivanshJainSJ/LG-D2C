@@ -47,7 +47,10 @@ export default function LoginPage() {
     }
   };
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   const fillCredentials = (role: "ADMIN" | "AGENT") => {
+    if (isProduction) return;
     if (role === "ADMIN") {
       setEmail("admin@livguard.com");
       setPassword("Admin@123");
@@ -80,30 +83,32 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         <div className="bg-slate-900 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10">
-          {/* Demo account quick selector */}
-          <div className="mb-6">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2 text-center">
-              Quick Demo Fill
-            </span>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => fillCredentials("ADMIN")}
-                className="py-2 px-3 border border-red-900/60 bg-red-950/40 hover:bg-red-900/60 rounded-lg text-xs font-bold text-red-300 flex items-center justify-center space-x-1.5 transition"
-              >
-                <ShieldCheck className="w-4 h-4 text-red-500" />
-                <span>Admin Demo</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials("AGENT")}
-                className="py-2 px-3 border border-slate-700 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 flex items-center justify-center space-x-1.5 transition"
-              >
-                <UserCheck className="w-4 h-4 text-slate-400" />
-                <span>Agent Demo</span>
-              </button>
+          {/* Demo account quick selector (development only - never rendered in production) */}
+          {!isProduction && (
+            <div className="mb-6">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2 text-center">
+                Quick Demo Fill (Development Only)
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => fillCredentials("ADMIN")}
+                  className="py-2 px-3 border border-red-900/60 bg-red-950/40 hover:bg-red-900/60 rounded-lg text-xs font-bold text-red-300 flex items-center justify-center space-x-1.5 transition"
+                >
+                  <ShieldCheck className="w-4 h-4 text-red-500" />
+                  <span>Admin Demo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials("AGENT")}
+                  className="py-2 px-3 border border-slate-700 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-bold text-slate-300 flex items-center justify-center space-x-1.5 transition"
+                >
+                  <UserCheck className="w-4 h-4 text-slate-400" />
+                  <span>Agent Demo</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {error && (
             <div className="mb-6 p-3 rounded-lg bg-red-950/60 border border-red-800/60 flex items-start space-x-2.5 text-red-300 text-xs">

@@ -8,6 +8,7 @@ from app.models.product import Product
 from app.models.coupon import Coupon, CouponDiscountType
 from app.models.settings import TaxSettings, TaxPricingPolicy
 from app.schemas.quotation import QuotationItemInput
+from app.core.product_categories import get_category_image_url, get_category_display_name
 
 def round_curr(val: Decimal) -> Decimal:
     return val.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -34,16 +35,19 @@ class PricingService:
         categories_in_quote = set()
 
         for item_in in items_input:
-            product = db.query(Product).filter(Product.id == item_in.product_id).first()
+            p_id = item_in["product_id"] if isinstance(item_in, dict) else item_in.product_id
+            qty = item_in["quantity"] if isinstance(item_in, dict) else item_in.quantity
+
+            product = db.query(Product).filter(Product.id == p_id).first()
             if not product:
-                raise ValueError(f"Product ID '{item_in.product_id}' not found.")
+                raise ValueError(f"Product ID '{p_id}' not found.")
             if not product.is_active:
                 raise ValueError(f"Product '{product.name}' ({product.sku}) is archived and cannot be added.")
-            if item_in.quantity <= 0:
-                raise ValueError(f"Invalid quantity {item_in.quantity} for product '{product.name}'.")
+            if qty <= 0:
+                raise ValueError(f"Invalid quantity {qty} for product '{product.name}'.")
 
             unit_price = Decimal(str(product.base_price))
-            line_total = round_curr(unit_price * Decimal(item_in.quantity))
+            line_total = round_curr(unit_price * Decimal(qty))
             subtotal += line_total
             categories_in_quote.add(product.category)
 
@@ -51,10 +55,12 @@ class PricingService:
                 "product_id": product.id,
                 "sku": product.sku,
                 "product_name": product.name,
+                "category": product.category,
+                "category_display": get_category_display_name(product.category),
                 "description": product.description,
-                "image_url": product.image_url,
+                "image_url": product.image_url or get_category_image_url(product.category),
                 "unit_price": unit_price,
-                "quantity": item_in.quantity,
+                "quantity": qty,
                 "total_price": line_total
             })
 

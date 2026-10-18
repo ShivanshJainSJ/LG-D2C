@@ -4,6 +4,10 @@ import { useState, useEffect, useRef } from "react";
 import { Search, Loader2, X, Package, Check, ChevronRight } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import {
+  getProductCategoryImage,
+  getProductCategoryLabel,
+} from "@/lib/productCategories";
 
 export interface SearchProduct {
   id: string;
@@ -174,18 +178,14 @@ export function SkuAutocomplete({
                   >
                     {/* Thumbnail */}
                     <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden shrink-0 p-1">
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.name}
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <Package className="w-5 h-5 text-slate-400" />
-                      )}
+                      <img
+                        src={getProductCategoryImage(product.category, product.image_url)}
+                        alt={product.name}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/uploads/products/inverter.png";
+                        }}
+                      />
                     </div>
 
                     {/* Product Meta */}
@@ -195,7 +195,7 @@ export function SkuAutocomplete({
                           {product.sku}
                         </span>
                         <span className="text-[10px] font-bold uppercase text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                          {product.category}
+                          {getProductCategoryLabel(product.category)}
                         </span>
                       </div>
                       <div className="font-bold text-xs text-slate-900 truncate mt-0.5">

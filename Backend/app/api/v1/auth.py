@@ -2,16 +2,19 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.core.dependencies import get_current_user, log_audit_event
+from app.core.rate_limit import limiter
 from app.models.user import User, LoginHistory, UserRole
 from app.schemas.auth import LoginRequest, TokenResponse, PasswordResetRequest
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=TokenResponse)
-def login(login_data: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     ip_addr = request.client.host if request.client else "unknown"
     user_agent = request.headers.get("user-agent", "unknown")
     
@@ -47,7 +50,9 @@ def login(login_data: LoginRequest, request: Request, response: Response, db: Se
         value=f"Bearer {token}",
         httponly=True,
         samesite="lax",
-        secure=False # Set to True in production with HTTPS
+        secure=(settings.ENVIRONMENT == "production"),
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/"
     )
 
     return TokenResponse(
@@ -61,7 +66,13 @@ def login(login_data: LoginRequest, request: Request, response: Response, db: Se
 
 @router.post("/logout")
 def logout(response: Response, current_user: User = Depends(get_current_user)):
-    response.delete_cookie(key="access_token")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        samesite="lax",
+        secure=(settings.ENVIRONMENT == "production")
+    )
     return {"message": "Successfully logged out"}
 
 @router.get("/me")
@@ -73,18 +84,37 @@ def get_me(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "mobile": current_user.mobile,
         "is_active": current_user.is_active,
-        "last_active_at": current_user.last_active_at
+        "last_active_at": current_user.last_active_at,
+        "password_changed_at": current_user.password_changed_at
     }
 
 @router.post("/change-password")
+@limiter.limit("5/minute")
 def change_password(
+    request: Request,
     pwd_data: PasswordResetRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if len(pwd_data.new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if pwd_data.current_password:
+        if not verify_password(pwd_data.current_password, current_user.hashed_password):
+            raise HTTPException(status_code=400, detail="Current password verification failed.")
+
+    new_pwd = pwd_data.new_password.strip()
+    if len(new_pwd) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters long.")
     
-    current_user.hashed_password = get_password_hash(pwd_data.new_password)
+    has_letter = any(c.isalpha() for c in new_pwd)
+    has_digit_or_symbol = any(not c.isalpha() for c in new_pwd)
+    if not (has_letter and has_digit_or_symbol):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must contain a combination of letters and at least one number or special character."
+        )
+    
+    current_user.hashed_password = get_password_hash(new_pwd)
+    current_user.password_changed_at = datetime.now(timezone.utc)
     db.commit()
-    return {"message": "Password updated successfully"}
+
+    log_audit_event(db, current_user, "CHANGE_PASSWORD", "User", current_user.id, {"email": current_user.email}, request)
+    return {"message": "Password updated successfully. Prior active sessions have been invalidated."}

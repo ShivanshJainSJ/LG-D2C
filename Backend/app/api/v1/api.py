@@ -15,11 +15,15 @@ from app.api.v1.agent.products import router as agent_products_router
 from app.api.v1.agent.quotations import router as agent_quotations_router
 from app.api.v1.agent.payments import router as agent_payments_router
 from app.api.v1.agent.dashboard import router as agent_dashboard_router
+from app.api.v1.customers import router as customers_router
 
 api_router = APIRouter()
 
 # Auth
 api_router.include_router(auth_router)
+
+# Customers & Quotation History
+api_router.include_router(customers_router)
 
 # Admin
 api_router.include_router(admin_dashboard_router)

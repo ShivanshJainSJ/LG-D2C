@@ -49,6 +49,17 @@ def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user account")
     
+    # Invalidate token if issued before user changed their password
+    token_iat = payload.get("iat")
+    if token_iat is not None and user.password_changed_at is not None:
+        pwd_changed_ts = user.password_changed_at.replace(tzinfo=timezone.utc).timestamp() if user.password_changed_at.tzinfo is None else user.password_changed_at.timestamp()
+        if token_iat < (pwd_changed_ts - 1):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session has been invalidated due to a password change. Please log in again.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     # Update last heartbeat/active timestamp
     user.last_active_at = datetime.now(timezone.utc)
     db.commit()

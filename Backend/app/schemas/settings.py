@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
@@ -35,8 +35,7 @@ class CompanySettingsResponse(BaseModel):
     version: int
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TaxSettingsUpdate(BaseModel):
     gst_rate: Decimal = Field(..., ge=0, le=100)
@@ -53,5 +52,4 @@ class TaxSettingsResponse(BaseModel):
     version: int
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,3 +1,6 @@
+import os
+os.environ["TESTING"] = "1"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -109,8 +112,11 @@ def db_session():
     session.close()
     Base.metadata.drop_all(bind=engine)
 
+from app.core.rate_limit import limiter
+
 @pytest.fixture(scope="function")
 def client(db_session):
+    limiter.reset()
     def override_get_db():
         try:
             yield db_session
@@ -121,3 +127,4 @@ def client(db_session):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+    limiter.reset()

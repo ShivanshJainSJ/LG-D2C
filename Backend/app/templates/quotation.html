@@ -27,98 +27,81 @@
       font-size: 11px;
     }
 
-    /* Top Header Section */
-    .header-container {
+    /* Top Header Section: Banner followed by Logo & Quotation Heading */
+    .quotation-header-stack {
+      width: 100%;
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .header-top-banner {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+
+    .header-logo-quotation {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* Amount in Words (Directly below pricing summary box) */
+    .amount-words-container {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #e31e24;
+      border-radius: 6px;
+      padding: 7px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 10.5px;
+    }
+
+    .amount-words-title {
+      font-weight: 800;
+      color: #111827;
+      white-space: nowrap;
+    }
+
+    .amount-words-value {
+      font-weight: 700;
+      color: #b91c1c;
+      letter-spacing: 0.1px;
+    }
+
+    /* Signature Areas */
+    .signatures-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      position: relative;
+      align-items: flex-end;
+      margin-top: 14px;
+      margin-bottom: 10px;
+      padding: 0 10px;
     }
 
-    .header-left {
-      width: 50%;
-      padding-top: 2px;
+    .sig-box {
+      width: 200px;
+      text-align: center;
     }
 
-    .main-logo-img {
-      height: 52px;
-      max-width: 160px;
-      border-radius: 6px;
-      object-fit: contain;
-      display: block;
-      margin-bottom: 4px;
+    .sig-line {
+      border-bottom: 1px dashed #9ca3af;
+      margin-bottom: 5px;
+      height: 22px;
     }
 
-    .logo-row {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-      margin-bottom: 2px;
-    }
-
-    .logo-text-liv {
-      font-size: 32px;
-      font-weight: 900;
-      color: #111827;
-      font-style: italic;
-      letter-spacing: -1px;
-      line-height: 1;
-    }
-
-    .logo-text-guard {
-      font-size: 32px;
-      font-weight: 900;
-      color: #111827;
-      font-style: italic;
-      letter-spacing: -1px;
-      line-height: 1;
-    }
-
-    .logo-tagline {
-      font-size: 11px;
+    .sig-label {
+      font-size: 9px;
       font-weight: 700;
-      color: #111827;
-      margin-left: 28px;
-      letter-spacing: 0.2px;
-      margin-bottom: 12px;
-    }
-
-    .quotation-main-title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #111827;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      line-height: 1.1;
-      margin-top: 4px;
-    }
-
-    .quotation-subtitle {
-      font-size: 10.5px;
-      font-weight: 500;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-
-    /* Top Right Banner */
-    .header-right {
-      width: 48%;
-      position: relative;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-    }
-
-    .banner-full-img {
-      width: 100%;
-      height: 56px;
-      border-radius: 8px;
-      object-fit: cover;
-      object-position: center;
-      border: 1px solid #111827;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-      display: block;
+      color: #4b5563;
     }
 
     /* Customer & Quotation Info (Combined Single Panel) */
@@ -531,27 +514,14 @@
 
 <body>
 
-  <!-- Top Header Section -->
-  <div class="header-container">
-    <div class="header-left">
-      {% if logo_data_uri %}
-      <img src="{{ logo_data_uri }}" alt="Livguard" class="main-logo-img">
-      {% else %}
-      <div class="logo-row">
-        <span class="logo-text-liv">Liv</span><span class="logo-text-guard" style="color: #e31e24;">7</span><span
-          class="logo-text-guard">uard</span>
-      </div>
-      <div class="logo-tagline">Energy Unlimited</div>
-      {% endif %}
-      <div class="quotation-main-title">QUOTATION</div>
-      <div class="quotation-subtitle">Reliable Power Solution for a Brighter Tomorrow</div>
-    </div>
-
-    <div class="header-right">
-      {% if banner_data_uri %}
-      <img src="{{ banner_data_uri }}" alt="Livguard Power Banner" class="banner-full-img">
-      {% endif %}
-    </div>
+  <!-- Top Header Section: 1. Banner, 2. Logo + QUOTATION Heading Image -->
+  <div class="quotation-header-stack">
+    {% if banner_data_uri %}
+    <img src="{{ banner_data_uri }}" alt="Livguard Banner" class="header-top-banner">
+    {% endif %}
+    {% if logo_quotation_data_uri %}
+    <img src="{{ logo_quotation_data_uri }}" alt="Livguard Quotation" class="header-logo-quotation">
+    {% endif %}
   </div>
 
   <!-- Customer & Quotation Details (Combined Single Panel) -->
@@ -597,7 +567,7 @@
             <td class="val-clean">{{ issue_date }}</td>
           </tr>
           <tr>
-            <td class="label">No. of Products</td>
+            <td class="label">Total Quantity</td>
             <td class="colon">:</td>
             <td class="val-clean">{{ total_quantity }}</td>
           </tr>
@@ -730,6 +700,12 @@
     </div>
   </div>
 
+  <!-- Amount in Words (Directly below pricing summary box) -->
+  <div class="amount-words-container">
+    <span class="amount-words-title">Amount in Words:</span>
+    <span class="amount-words-value">{{ amount_in_words }}</span>
+  </div>
+
   <!-- Bottom Terms & Contact Section -->
   <div class="bottom-section">
     <!-- Terms & Conditions Card (Full Width) -->
@@ -771,6 +747,18 @@
           </svg>
           <span>marketing@livguard.com</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures-row">
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Authorized Signatory (Livguard)</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-line"></div>
+        <div class="sig-label">Customer Acceptance & Signature</div>
       </div>
     </div>
   </div>
@@ -815,6 +803,7 @@
       </svg>
       <span>POWERING A BETTER TOMORROW</span>
     </div>
+  </div>
 </body>
 
 </html>

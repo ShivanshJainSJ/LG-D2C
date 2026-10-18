@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.dependencies import require_agent
 from app.models.user import User
 from app.models.product import Product
+from app.core.product_categories import get_category_image_url, get_category_display_name
 
 router = APIRouter(prefix="/agent/products", tags=["Agent Products"])
 
@@ -30,8 +31,9 @@ def search_products(
             "name": p.name,
             "brand": p.brand,
             "category": p.category,
+            "category_display": get_category_display_name(p.category),
             "description": p.description,
-            "image_url": p.image_url,
+            "image_url": get_category_image_url(p.category, p.image_url),
             "unit_price": float(p.base_price)
         })
     return results
@@ -59,8 +61,9 @@ def list_active_products(
             "name": p.name,
             "brand": p.brand,
             "category": p.category,
+            "category_display": get_category_display_name(p.category),
             "description": p.description,
-            "image_url": p.image_url,
+            "image_url": get_category_image_url(p.category, p.image_url),
             "unit_price": float(p.base_price) # Agents can view authorized unit prices
         })
     return results

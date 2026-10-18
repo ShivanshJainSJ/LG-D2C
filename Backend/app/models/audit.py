@@ -1,9 +1,15 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Index
 from app.core.database import Base
 from app.models.base import generate_uuid, utc_now
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_logs_actor", "actor_id"),
+        Index("ix_audit_logs_action", "action"),
+        Index("ix_audit_logs_entity", "entity_type", "entity_id"),
+        Index("ix_audit_logs_created_at", "created_at"),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     actor_id = Column(String(36), nullable=True) # User ID who initiated action

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FileText,
   Search,
@@ -14,6 +15,7 @@ import {
   Layers,
   FileDown,
   Image as ImageIcon,
+  RotateCcw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -31,6 +33,7 @@ interface AgentQuotation {
 }
 
 export default function AgentQuotationsListPage() {
+  const router = useRouter();
   const [quotations, setQuotations] = useState<AgentQuotation[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -60,6 +63,18 @@ export default function AgentQuotationsListPage() {
       fetchQuotations();
     } catch (err: any) {
       alert(err.message || "Failed to duplicate quotation");
+    }
+  };
+
+  const handleReuse = async (id: string) => {
+    try {
+      const res = await api.post<{ new_quotation_id: string; message: string; price_updated_notice: string }>(
+        `/agent/quotations/${id}/reuse`
+      );
+      alert(`${res.message}\n${res.price_updated_notice}`);
+      router.push(`/agent/quotations/${res.new_quotation_id}`);
+    } catch (err: any) {
+      alert(err.message || "Failed to reuse quotation");
     }
   };
 
@@ -185,6 +200,14 @@ export default function AgentQuotationsListPage() {
                             <span>Report Pay</span>
                           </Link>
                         )}
+                        <button
+                          onClick={() => handleReuse(q.id)}
+                          className="px-2 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition flex items-center space-x-1"
+                          title="Reuse Quotation with Current Catalog Pricing"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Reuse</span>
+                        </button>
                         <button
                           onClick={() => handleDuplicate(q.id)}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"

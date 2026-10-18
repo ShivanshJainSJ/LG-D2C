@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+import os
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
 from decimal import Decimal
 
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.dependencies import require_agent, log_audit_event
+from app.core.dependencies import require_agent, get_current_user, log_audit_event
 from app.models.user import User, UserRole
 from app.models.quotation import Quotation, QuotationStatus
 from app.models.payment import Payment, PaymentStatus
@@ -118,3 +122,76 @@ def get_my_payment_reports(
             created_at=p.created_at
         ))
     return results
+
+ALLOWED_EVIDENCE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf"}
+MAX_EVIDENCE_SIZE_BYTES = 5 * 1024 * 1024 # 5 MB
+
+@router.post("/upload-evidence")
+async def upload_payment_evidence(
+    file: UploadFile = File(...),
+    current_agent: User = Depends(require_agent)
+):
+    """
+    Securely uploads payment proof/evidence to a protected private directory.
+    Validates file extension and size, generating a collision-resistant UUID filename.
+    """
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in ALLOWED_EVIDENCE_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type '{ext}'. Allowed types: {', '.join(ALLOWED_EVIDENCE_EXTENSIONS)}"
+        )
+
+    content = await file.read(MAX_EVIDENCE_SIZE_BYTES + 1)
+    if len(content) > MAX_EVIDENCE_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File exceeds maximum allowed size of {MAX_EVIDENCE_SIZE_BYTES // (1024 * 1024)} MB."
+        )
+
+    evidence_dir = os.path.join(settings.UPLOAD_DIR, "evidence")
+    os.makedirs(evidence_dir, exist_ok=True)
+
+    safe_name = f"{uuid.uuid4().hex}_{os.path.basename(file.filename or 'evidence')}"
+    file_path = os.path.join(evidence_dir, safe_name)
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    return {
+        "evidence_url": f"/api/v1/agent/payments/evidence/{safe_name}",
+        "filename": safe_name
+    }
+
+@router.get("/evidence/{filename}")
+def download_payment_evidence(
+    filename: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Securely downloads payment proof/evidence.
+    Requires authentication and verifies that the requesting user is either an ADMIN
+    or the AGENT who reported the payment.
+    """
+    clean_filename = os.path.basename(filename)
+    evidence_dir = os.path.join(settings.UPLOAD_DIR, "evidence")
+    file_path = os.path.join(evidence_dir, clean_filename)
+
+    # Prevent directory traversal attacks
+    if not os.path.abspath(file_path).startswith(os.path.abspath(evidence_dir)):
+        raise HTTPException(status_code=400, detail="Invalid file path.")
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Evidence document not found.")
+
+    # Authorization: Admins have global access, Agents only access their own submissions
+    if current_user.role != UserRole.ADMIN:
+        payment = db.query(Payment).filter(Payment.evidence_url.contains(clean_filename)).first()
+        if payment and payment.reported_by_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="Access forbidden: You cannot view payment evidence belonging to another agent."
+            )
+
+    return FileResponse(file_path)

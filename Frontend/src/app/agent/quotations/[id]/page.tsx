@@ -19,15 +19,20 @@ import {
   Trash2,
   X,
   CreditCard,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime, amountToWordsINR } from "@/lib/utils";
+import { getProductCategoryImage } from "@/lib/productCategories";
+import { CustomerQuotationHistoryModal } from "@/components/agent/CustomerQuotationHistoryModal";
 
 interface QuotationItem {
   id: string;
   product_id: string;
   sku: string;
   product_name: string;
+  category?: string | null;
   description: string | null;
   image_url?: string | null;
   unit_price: number;
@@ -67,6 +72,8 @@ interface ActiveProduct {
   id: string;
   sku: string;
   name: string;
+  category?: string;
+  image_url?: string | null;
   unit_price: number;
 }
 
@@ -184,6 +191,41 @@ export default function AgentQuotationDetailPage() {
     }
   };
 
+  const [issueLoading, setIssueLoading] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [historyCustomerId, setHistoryCustomerId] = useState<string | null>(null);
+
+  const handleIssueDraft = async () => {
+    if (!quotation) return;
+    setIssueLoading(true);
+    try {
+      const res = await api.post<{ message: string; quotation_number: string }>(
+        `/agent/quotations/${quotation.id}/issue-draft`
+      );
+      alert(`Quotation successfully issued with official number ${res.quotation_number}!`);
+      fetchQuotation();
+    } catch (err: any) {
+      alert(err.message || "Failed to issue draft quotation.");
+    } finally {
+      setIssueLoading(false);
+    }
+  };
+
+  const openCustomerHistory = async () => {
+    if (!quotation) return;
+    try {
+      const res = await api.get<any>(`/customers/lookup?mobile=${encodeURIComponent(quotation.customer_mobile)}`);
+      if (res.found && res.customer?.id) {
+        setHistoryCustomerId(res.customer.id);
+        setHistoryModalOpen(true);
+      } else {
+        alert("No historical records found for this customer.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to find customer records.");
+    }
+  };
+
   if (loading) {
     return <div className="p-12 text-center text-xs text-slate-400">Loading quotation details...</div>;
   }
@@ -208,6 +250,21 @@ export default function AgentQuotationDetailPage() {
         </Link>
 
         <div className="flex items-center space-x-2">
+          {quotation.status === "DRAFT" && (
+            <button
+              onClick={handleIssueDraft}
+              disabled={issueLoading}
+              className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition disabled:opacity-50"
+            >
+              {issueLoading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Send className="w-3.5 h-3.5" />
+              )}
+              <span>Issue Official Quotation</span>
+            </button>
+          )}
+
           {quotation.status === "ISSUED" && (
             <Link
               href={`/agent/payments?quote_id=${quotation.id}`}
@@ -262,9 +319,19 @@ export default function AgentQuotationDetailPage() {
                 {quotation.status}
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Customer: <strong className="text-slate-800">{quotation.customer_name}</strong> &bull; Mobile: {quotation.customer_mobile}
-            </p>
+            <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+              <span>
+                Customer: <strong className="text-slate-800">{quotation.customer_name}</strong> &bull; Mobile: {quotation.customer_mobile}
+              </span>
+              <button
+                type="button"
+                onClick={openCustomerHistory}
+                className="text-red-600 hover:text-red-700 font-bold inline-flex items-center space-x-1 ml-1 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded border border-red-200 transition text-[10px]"
+              >
+                <Clock className="w-3 h-3" />
+                <span>Customer Quotation History</span>
+              </button>
+            </div>
           </div>
 
           {activeRevision && (
@@ -313,29 +380,18 @@ export default function AgentQuotationDetailPage() {
         {/* Active Revision Snapshot */}
         {activeRevision && (
           <div className="p-5 sm:p-6 space-y-6 text-xs">
-            {/* Document Branded Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-center border-b border-slate-200 pb-4 gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-28 bg-black rounded-lg p-1.5 flex items-center justify-center shadow-sm">
-                  <img
-                    src="/assets/livguard_logo.jpg"
-                    alt="Livguard"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <div>
-                  <h2 className="text-base font-black text-slate-900 tracking-tight uppercase">LIVGUARD QUOTATION</h2>
-                  <p className="text-[11px] text-slate-500 font-semibold">Powering the homes of tomorrow</p>
-                </div>
-              </div>
-
-              <div className="shrink-0">
-                <img
-                  src="/assets/livguard_banner.jpg"
-                  alt="Livguard Inverters & Batteries"
-                  className="h-12 sm:h-14 w-auto max-w-[280px] rounded-lg object-cover border border-slate-200 shadow-sm"
-                />
-              </div>
+            {/* Document Branded Header: 1. Banner, 2. Logo + QUOTATION Heading Image */}
+            <div className="space-y-2 border-b border-slate-200 pb-4">
+              <img
+                src="/assets/Banner.png"
+                alt="Livguard Banner"
+                className="w-full h-auto rounded-lg object-contain block"
+              />
+              <img
+                src="/assets/LogoQuotation.png"
+                alt="Livguard Quotation"
+                className="w-full h-auto object-contain block"
+              />
             </div>
 
             {/* Meta Info Panel */}
@@ -386,15 +442,14 @@ export default function AgentQuotationDetailPage() {
                       <td className="py-2.5 px-3 text-center text-slate-500 font-bold">{idx + 1}</td>
                       <td className="py-2.5 px-3">
                         <div className="w-12 h-12 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center overflow-hidden">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.product_name}
-                              className="w-full h-full object-contain"
-                            />
-                          ) : (
-                            <div className="text-[9px] font-bold text-slate-400">Livguard</div>
-                          )}
+                          <img
+                            src={getProductCategoryImage(item.category, item.image_url)}
+                            alt={item.product_name}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/uploads/products/inverter.png";
+                            }}
+                          />
                         </div>
                       </td>
                       <td className="py-2.5 px-3 text-center font-mono font-bold text-red-600">
@@ -422,7 +477,7 @@ export default function AgentQuotationDetailPage() {
             </div>
 
             {/* Totals Summary */}
-            <div className="flex justify-end">
+            <div className="flex flex-col items-end space-y-3">
               <div className="w-80 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
@@ -442,6 +497,12 @@ export default function AgentQuotationDetailPage() {
                   <span>Grand Total:</span>
                   <span>{formatCurrency(activeRevision.grand_total)}</span>
                 </div>
+              </div>
+
+              {/* Amount in Words */}
+              <div className="w-full bg-slate-50 border border-slate-200 border-l-4 border-l-red-600 rounded-xl p-3 text-xs flex items-center justify-between">
+                <span className="font-black text-slate-900">Amount in Words:</span>
+                <span className="font-bold text-red-700 italic">{amountToWordsINR(activeRevision.grand_total)}</span>
               </div>
             </div>
           </div>
@@ -516,9 +577,21 @@ export default function AgentQuotationDetailPage() {
                   const prod = availableProducts.find((p) => p.id === itm.product_id);
                   return (
                     <div key={idx} className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-slate-900">{prod ? prod.name : "Product"}</div>
-                        <div className="text-[10px] text-slate-400">Qty: {itm.quantity}</div>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 bg-white rounded border border-slate-200 p-0.5 flex items-center justify-center overflow-hidden shrink-0">
+                          <img
+                            src={getProductCategoryImage(prod?.category, prod?.image_url)}
+                            alt={prod?.name || "Product"}
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/uploads/products/inverter.png";
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{prod ? prod.name : "Product"}</div>
+                          <div className="text-[10px] text-slate-400">Qty: {itm.quantity}</div>
+                        </div>
                       </div>
                       <button
                         type="button"
@@ -565,6 +638,19 @@ export default function AgentQuotationDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Customer Quotation History Modal */}
+      <CustomerQuotationHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => setHistoryModalOpen(false)}
+        customerId={historyCustomerId}
+        customerName={quotation.customer_name}
+        customerMobile={quotation.customer_mobile}
+        onReuseQuotation={(result) => {
+          setHistoryModalOpen(false);
+          router.push(`/agent/quotations/${result.new_quotation_id}`);
+        }}
+      />
     </div>
   );
 }

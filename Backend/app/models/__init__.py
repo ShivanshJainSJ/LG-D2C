@@ -8,6 +8,7 @@ from app.models.payment import Payment, PaymentStatus, PaymentMethod
 from app.models.order import Order, OrderStatus
 from app.models.settings import CompanySettings, TaxSettings, NumberingPolicy, TaxPricingPolicy
 from app.models.audit import AuditLog
+from app.models.product_import import ProductImportBatch
 
 __all__ = [
     "Base",
@@ -16,6 +17,7 @@ __all__ = [
     "LoginHistory",
     "Product",
     "PriceHistory",
+    "ProductImportBatch",
     "Customer",
     "Coupon",
     "CouponDiscountType",

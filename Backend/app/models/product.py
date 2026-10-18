@@ -1,10 +1,15 @@
-from sqlalchemy import Column, String, Boolean, DateTime, Numeric, Text, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, Numeric, Text, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import generate_uuid, utc_now
 
 class Product(Base):
     __tablename__ = "products"
+    __table_args__ = (
+        Index("ix_products_name", "name"),
+        Index("ix_products_is_active", "is_active"),
+        Index("ix_products_category_active", "category", "is_active"),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     sku = Column(String(100), unique=True, index=True, nullable=False)

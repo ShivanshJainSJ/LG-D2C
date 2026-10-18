@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import Column, String, Boolean, DateTime, Numeric, Integer, Enum, ForeignKey, Text
+from sqlalchemy import Column, String, Boolean, DateTime, Numeric, Integer, Enum, ForeignKey, Text, Index, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import generate_uuid, utc_now
@@ -14,11 +14,18 @@ class QuotationStatus(str, enum.Enum):
 
 class Quotation(Base):
     __tablename__ = "quotations"
+    __table_args__ = (
+        Index("ix_quotations_created_at", "created_at"),
+        Index("ix_quotations_agent_status", "agent_id", "status"),
+        Index("ix_quotations_status_created", "status", "created_at"),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     quotation_number = Column(String(100), unique=True, index=True, nullable=True) # Generated upon issuance
     current_revision_number = Column(Integer, default=0, nullable=False)
     agent_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=True, index=True)
+    source_quotation_id = Column(String(36), ForeignKey("quotations.id"), nullable=True, index=True)
     customer_name = Column(String(255), nullable=False)
     customer_mobile = Column(String(30), nullable=False, index=True)
     customer_email = Column(String(255), nullable=True)
@@ -28,7 +35,9 @@ class Quotation(Base):
     created_at = Column(DateTime, default=utc_now, nullable=False)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
-    agent = relationship("User")
+    agent = relationship("User", foreign_keys=[agent_id])
+    customer = relationship("Customer", back_populates="quotations", foreign_keys=[customer_id])
+    source_quotation = relationship("Quotation", remote_side=[id], foreign_keys=[source_quotation_id])
     revisions = relationship("QuotationRevision", back_populates="quotation", cascade="all, delete-orphan", order_by="QuotationRevision.revision_number.desc()")
     payments = relationship("Payment", back_populates="quotation", cascade="all, delete-orphan")
     order = relationship("Order", back_populates="quotation", uselist=False)
@@ -77,6 +86,9 @@ class QuotationItem(Base):
 
 class NumberSequence(Base):
     __tablename__ = "number_sequences"
+    __table_args__ = (
+        UniqueConstraint("sequence_type", "year_key", name="uq_number_sequence_type_year"),
+    )
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     sequence_type = Column(String(50), nullable=False, index=True) # "QUOTATION" or "ORDER"

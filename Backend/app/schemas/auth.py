@@ -15,6 +15,7 @@ class TokenResponse(BaseModel):
     email: str
 
 class PasswordResetRequest(BaseModel):
+    current_password: Optional[str] = None
     new_password: str
 
 class AdminUserCreate(BaseModel):

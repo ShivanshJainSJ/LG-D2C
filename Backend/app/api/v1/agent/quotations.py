@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
+import logging
 
 from app.core.database import get_db
 from app.core.dependencies import require_agent, log_audit_event
@@ -9,16 +10,17 @@ from app.models.user import User, UserRole
 from app.models.quotation import Quotation, QuotationRevision, QuotationItem, QuotationStatus
 from app.models.coupon import CouponRedemption
 from app.models.settings import CompanySettings, TaxSettings
-from app.schemas.quotation import QuotationCreateRequest, QuotationPreviewResponse
+from app.schemas.quotation import QuotationCreateRequest, QuotationPreviewRequest, QuotationPreviewResponse
 from app.services.pricing_service import PricingService
 from app.services.numbering_service import NumberingService
 from app.services.document_service import DocumentService
+from app.services.customer_service import CustomerService
 
 router = APIRouter(prefix="/agent/quotations", tags=["Agent Quotations"])
 
 @router.post("/preview", response_model=QuotationPreviewResponse)
 def preview_quotation(
-    quote_in: QuotationCreateRequest,
+    quote_in: QuotationPreviewRequest,
     current_agent: User = Depends(require_agent),
     db: Session = Depends(get_db)
 ):
@@ -33,8 +35,8 @@ def preview_quotation(
         raise HTTPException(status_code=400, detail=str(e))
 
     return QuotationPreviewResponse(
-        customer_name=quote_in.customer_name,
-        customer_mobile=quote_in.customer_mobile,
+        customer_name=quote_in.customer_name or "Customer Preview",
+        customer_mobile=quote_in.customer_mobile or "9876543210",
         items=calc_result["items"],
         subtotal=calc_result["subtotal"],
         discount_amount=calc_result["discount_amount"],
@@ -61,12 +63,29 @@ def save_draft_quotation(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    # Normalize and get or create canonical customer
+    try:
+        customer = CustomerService.get_or_create_customer(
+            db=db,
+            name=quote_in.customer_name,
+            raw_mobile=quote_in.customer_mobile,
+            email=quote_in.customer_email,
+            address=quote_in.customer_address,
+            agent_id=current_agent.id
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     quotation = Quotation(
         quotation_number=None, # No issued number for drafts
         current_revision_number=0,
         agent_id=current_agent.id,
+        customer_id=customer.id,
+        source_quotation_id=quote_in.source_quotation_id,
         customer_name=quote_in.customer_name,
-        customer_mobile=quote_in.customer_mobile,
+        customer_mobile=customer.normalized_mobile,
         customer_email=quote_in.customer_email,
         customer_address=quote_in.customer_address,
         status=QuotationStatus.DRAFT
@@ -132,12 +151,29 @@ def issue_new_quotation(
     # Generate sequential unique quotation number
     quote_number = NumberingService.generate_quotation_number(db)
 
+    # Normalize and get or create canonical customer
+    try:
+        customer = CustomerService.get_or_create_customer(
+            db=db,
+            name=quote_in.customer_name,
+            raw_mobile=quote_in.customer_mobile,
+            email=quote_in.customer_email,
+            address=quote_in.customer_address,
+            agent_id=current_agent.id
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
     quotation = Quotation(
         quotation_number=quote_number,
         current_revision_number=0,
         agent_id=current_agent.id,
+        customer_id=customer.id,
+        source_quotation_id=quote_in.source_quotation_id,
         customer_name=quote_in.customer_name,
-        customer_mobile=quote_in.customer_mobile,
+        customer_mobile=customer.normalized_mobile,
         customer_email=quote_in.customer_email,
         customer_address=quote_in.customer_address,
         status=QuotationStatus.ISSUED
@@ -203,6 +239,36 @@ def issue_new_quotation(
     db.commit()
     log_audit_event(db, current_agent, "ISSUE_QUOTATION", "Quotation", quotation.id, {"quotation_number": quote_number}, request)
     return {"message": "Quotation issued successfully", "quotation_id": quotation.id, "quotation_number": quote_number}
+
+@router.post("/{quotation_id}/issue-draft")
+def issue_draft_quotation(
+    quotation_id: str,
+    request: Request,
+    current_agent: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    quotation = db.query(Quotation).filter(
+        Quotation.id == quotation_id,
+        Quotation.agent_id == current_agent.id
+    ).first()
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    if quotation.status != QuotationStatus.DRAFT:
+        raise HTTPException(status_code=400, detail="Only DRAFT quotations can be issued.")
+
+    quote_number = NumberingService.generate_quotation_number(db)
+    quotation.quotation_number = quote_number
+    quotation.status = QuotationStatus.ISSUED
+    quotation.updated_at = datetime.utcnow()
+
+    # Update revision 0
+    if quotation.revisions:
+        rev = quotation.revisions[0]
+        rev.revision_label = "Original"
+
+    db.commit()
+    log_audit_event(db, current_agent, "ISSUE_QUOTATION", "Quotation", quotation.id, {"quotation_number": quote_number, "from_draft": True}, request)
+    return {"message": "Quotation officially issued", "quotation_id": quotation.id, "quotation_number": quote_number}
 
 @router.get("")
 def list_my_quotations(
@@ -482,10 +548,8 @@ async def download_my_quotation_pdf(
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
-        import traceback
-        err_msg = traceback.format_exc()
-        print("ERROR IN PDF DOWNLOAD:\n", err_msg)
-        raise HTTPException(status_code=500, detail=f"PDF generation error: {repr(e)} - {type(e).__name__}")
+        logging.error(f"Error generating PDF for quotation {quotation_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate quotation PDF. Please check server logs.")
 
 @router.get("/{quotation_id}/revisions/{revision_id}/png")
 async def download_my_quotation_png(
@@ -517,7 +581,23 @@ async def download_my_quotation_png(
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
-        import traceback
-        err_msg = traceback.format_exc()
-        print("ERROR IN PNG DOWNLOAD:\n", err_msg)
-        raise HTTPException(status_code=500, detail=f"PNG generation error: {repr(e)} - {type(e).__name__}")
+        logging.error(f"Error generating PNG for quotation {quotation_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to generate quotation image. Please check server logs.")
+
+@router.post("/{quotation_id}/reuse")
+def reuse_quotation(
+    quotation_id: str,
+    request: Request,
+    current_agent: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """
+    Creates a new draft quotation based on a historical quotation.
+    Revalidates prices, coupons, and tax settings on the backend.
+    """
+    return CustomerService.reuse_quotation(
+        db=db,
+        source_quotation_id=quotation_id,
+        current_agent=current_agent,
+        request=request
+    )

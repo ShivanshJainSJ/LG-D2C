@@ -8,6 +8,9 @@ import json
 import base64
 import mimetypes
 
+from app.core.currency import amount_to_words_inr
+from app.core.product_categories import get_category_image_url
+
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "documents")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -48,6 +51,8 @@ def get_image_data_uri(path_or_url: str) -> str:
     return path_or_url
 
 class DocumentService:
+    get_image_data_uri = staticmethod(get_image_data_uri)
+
     @staticmethod
     def render_quotation_html(quotation, revision, company_settings) -> str:
         template = jinja_env.get_template("quotation.html")
@@ -60,8 +65,9 @@ class DocumentService:
 
         items_data = []
         for item in revision.items:
-            # Resolve image URI
-            raw_img = item.image_url or (item.product.image_url if item.product else None)
+            # Resolve image URI: item.image_url -> product.image_url -> category image fallback
+            cat = item.product.category if item.product else None
+            raw_img = item.image_url or (item.product.image_url if item.product else None) or get_category_image_url(cat)
             data_uri = get_image_data_uri(raw_img) if raw_img else ""
             
             # Parse description bullets
@@ -80,16 +86,24 @@ class DocumentService:
             })
 
         banner_uri = (
-            get_image_data_uri("assets/livguard_banner.jpg") 
+            get_image_data_uri("assets/Banner.png")
+            or get_image_data_uri("Banner.png")
+            or get_image_data_uri("assets/livguard_banner.jpg") 
             or get_image_data_uri("assets/livguard_banner.jpeg")
-            or get_image_data_uri("assets/inverter_battery_combo.jpeg")
+        )
+        logo_quotation_uri = (
+            get_image_data_uri("assets/LogoQuotation.png")
+            or get_image_data_uri("LogoQuotation.png")
+            or get_image_data_uri("assets/livguard_logo.jpg")
         )
         logo_uri = (
             get_image_data_uri("assets/livguard_logo.jpg") 
             or get_image_data_uri("assets/livguard_logo.png")
+            or logo_quotation_uri
         )
 
         total_quantity = sum(item.quantity for item in revision.items)
+        amount_words = amount_to_words_inr(revision.grand_total)
 
         html_content = template.render(
             quotation_number=quotation.quotation_number or "DRAFT",
@@ -111,8 +125,10 @@ class DocumentService:
             tax_rate=float(revision.tax_rate),
             tax_amount=float(revision.tax_amount),
             grand_total=float(revision.grand_total),
+            amount_in_words=amount_words,
             company=company_settings,
             banner_data_uri=banner_uri,
+            logo_quotation_data_uri=logo_quotation_uri,
             logo_data_uri=logo_uri
         )
         return html_content
