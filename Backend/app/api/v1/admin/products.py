@@ -117,12 +117,12 @@ def download_xlsx_template(
     )
 
 @router.post("/import/preview", response_model=ProductImportPreviewResponse)
-async def preview_product_import(
+def preview_product_import(
     file: UploadFile = File(...),
     current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    file_bytes = await file.read()
+    file_bytes = file.file.read()
     try:
         preview = ProductImportService.validate_and_preview(file_bytes, file.filename, db)
         return preview
@@ -132,7 +132,7 @@ async def preview_product_import(
         raise HTTPException(status_code=500, detail=f"Error parsing import file: {str(e)}")
 
 @router.post("/import/execute", response_model=ProductImportExecuteResponse)
-async def execute_product_import(
+def execute_product_import(
     file: UploadFile = File(...),
     conflict_policy: str = Form("skip"),
     overwrite_confirmed: bool = Form(False),
@@ -140,7 +140,7 @@ async def execute_product_import(
     current_admin: User = Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    file_bytes = await file.read()
+    file_bytes = file.file.read()
     try:
         batch = ProductImportService.execute_import(
             file_bytes=file_bytes,

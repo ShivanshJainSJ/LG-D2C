@@ -60,9 +60,16 @@ def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-    # Update last heartbeat/active timestamp
-    user.last_active_at = datetime.now(timezone.utc)
-    db.commit()
+    # Update last heartbeat/active timestamp periodically (at most once every 60 seconds)
+    # to avoid constant SQLite table write locks on concurrent read requests
+    now = datetime.now(timezone.utc)
+    user_last_active = user.last_active_at.replace(tzinfo=timezone.utc) if user.last_active_at and user.last_active_at.tzinfo is None else user.last_active_at
+    if user_last_active is None or (now - user_last_active).total_seconds() > 60:
+        user.last_active_at = now
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
 
     return user
 

@@ -452,9 +452,13 @@ class ProductImportService:
             db.flush()
             batch_id = batch.id
 
+            is_sqlite = db.bind.dialect.name.startswith("sqlite") if db.bind else False
             for item in validation["rows"]:
                 sku = item["sku"]
-                existing = db.query(Product).filter(Product.sku == sku).with_for_update().first()
+                query = db.query(Product).filter(Product.sku == sku)
+                if not is_sqlite:
+                    query = query.with_for_update()
+                existing = query.first()
 
                 if existing:
                     if conflict_policy == "skip":
