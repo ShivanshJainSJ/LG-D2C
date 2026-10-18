@@ -40,6 +40,8 @@ share/python-wheels/
 *.db
 Backend/uploads/
 Backend/test.db
+test_*.pdf
+test_*.png
 
 # Playwright
 test-results/

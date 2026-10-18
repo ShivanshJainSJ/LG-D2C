@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, UploadFile, File, Form, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Optional, Dict, Any
 import csv
 import io
@@ -46,7 +46,13 @@ def list_products(
     if is_active is not None:
         query = query.filter(Product.is_active == is_active)
 
-    products = query.order_by(Product.name.asc()).offset(skip).limit(limit).all()
+    products = (
+        query.options(selectinload(Product.price_history))
+        .order_by(Product.name.asc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return products
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)

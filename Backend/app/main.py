@@ -106,12 +106,13 @@ def init_db_and_seed():
 
         # 3. Seed Users based on Environment
         if settings.ENVIRONMENT in ("development", "test"):
-            # Seed Dev/Test Admin User
+            # Seed Dev/Test Admin User if not already present
             admin = db.query(User).filter(User.email == "admin@livguard.com").first()
             if not admin:
+                init_admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD", "Admin@123")
                 admin = User(
                     email="admin@livguard.com",
-                    hashed_password=get_password_hash("Admin@123"),
+                    hashed_password=get_password_hash(init_admin_pwd),
                     full_name="Livguard Central Admin",
                     role=UserRole.ADMIN,
                     mobile="9876543210",
@@ -120,12 +121,13 @@ def init_db_and_seed():
                 db.add(admin)
                 db.flush()
 
-            # Seed Dev/Test Agent User
+            # Seed Dev/Test Agent User if not already present
             agent = db.query(User).filter(User.email == "agent@livguard.com").first()
             if not agent:
+                init_agent_pwd = os.getenv("INITIAL_AGENT_PASSWORD") or os.getenv("AGENT_PASSWORD", "Agent@123")
                 agent = User(
                     email="agent@livguard.com",
-                    hashed_password=get_password_hash("Agent@123"),
+                    hashed_password=get_password_hash(init_agent_pwd),
                     full_name="Vikram Sharma",
                     role=UserRole.AGENT,
                     mobile="9811223344",

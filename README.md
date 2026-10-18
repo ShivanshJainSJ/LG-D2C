@@ -16,14 +16,14 @@ A production-grade D2C Quotation & Order Management Platform built for **Livguar
 
 ---
 
-## 🔐 Default Demo Credentials
+## 🔐 Role-Based Access Control (RBAC)
 
-| Role | Email | Password | Permissions |
-|---|---|---|---|
-| **Central Admin** | `admin@livguard.com` | `Admin@123` | Full CRUD, Price History, GST Settings, Payment Review, Order Confirmation |
-| **Field Agent** | `agent@livguard.com` | `Agent@123` | SKU Lookup, Draft & Issue Quotations, Controlled Revisions, Report Payments |
+The platform enforces strict role-based access control across all workflows:
 
-*Quick login buttons are available on the `/login` page.*
+- **Central Admin**: Full product catalog management, bulk CSV/XLSX product import with conflict resolution, price history auditing, statutory tax configuration, payment verification, and order confirmation.
+- **Field Agent**: Customer identification by mobile number, SKU catalog exploration with automatic category image mapping, quotation drafting and issuance, immutable revision tracking, and payment reporting.
+
+User accounts are authenticated securely via database-backed password hashing (bcrypt), signed JSON Web Tokens (JWT), and secure cookies.
 
 ---
 
