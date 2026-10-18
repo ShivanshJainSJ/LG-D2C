@@ -45,12 +45,13 @@ def login(request: Request, response: Response, login_data: LoginRequest, db: Se
     token = create_access_token(subject=user.id, role=user.role.value)
     
     # Also set HTTP-only cookie for secure browser sessions
+    is_secure = (settings.ENVIRONMENT == "production") or (request.url.scheme == "https")
     response.set_cookie(
         key="access_token",
         value=f"Bearer {token}",
         httponly=True,
         samesite="lax",
-        secure=(settings.ENVIRONMENT == "production"),
+        secure=is_secure,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/"
     )
@@ -65,13 +66,14 @@ def login(request: Request, response: Response, login_data: LoginRequest, db: Se
     )
 
 @router.post("/logout")
-def logout(response: Response, current_user: User = Depends(get_current_user)):
+def logout(request: Request, response: Response, current_user: User = Depends(get_current_user)):
+    is_secure = (settings.ENVIRONMENT == "production") or (request.url.scheme == "https")
     response.delete_cookie(
         key="access_token",
         path="/",
         httponly=True,
         samesite="lax",
-        secure=(settings.ENVIRONMENT == "production")
+        secure=is_secure
     )
     return {"message": "Successfully logged out"}
 
@@ -89,17 +91,13 @@ def get_me(current_user: User = Depends(get_current_user)):
     }
 
 @router.post("/change-password")
-@limiter.limit("5/minute")
+@limiter.limit("10/minute")
 def change_password(
     request: Request,
     pwd_data: PasswordResetRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if pwd_data.current_password:
-        if not verify_password(pwd_data.current_password, current_user.hashed_password):
-            raise HTTPException(status_code=400, detail="Current password verification failed.")
-
     new_pwd = pwd_data.new_password.strip()
     if len(new_pwd) < 8:
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters long.")
@@ -110,6 +108,19 @@ def change_password(
         raise HTTPException(
             status_code=400,
             detail="Password must contain a combination of letters and at least one number or special character."
+        )
+
+    # Mandatory current password verification for self-service password changes
+    if not pwd_data.current_password or not verify_password(pwd_data.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Current password verification failed. Please provide your correct current password."
+        )
+
+    if pwd_data.current_password == new_pwd:
+        raise HTTPException(
+            status_code=400,
+            detail="New password cannot be identical to the current password."
         )
     
     current_user.hashed_password = get_password_hash(new_pwd)

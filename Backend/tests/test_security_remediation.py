@@ -95,6 +95,21 @@ def test_password_complexity_enforcement(client: TestClient, db_session):
     assert r3.status_code == 400
     assert "combination of letters and at least one number" in r3.json()["detail"]
 
+    # Missing current password
+    r4 = client.post("/api/v1/auth/change-password", json={"new_password": "ValidPassword123!"}, headers=headers)
+    assert r4.status_code == 400
+    assert "Current password verification failed" in r4.json()["detail"]
+
+    # Incorrect current password
+    r5 = client.post("/api/v1/auth/change-password", json={"current_password": "WrongPassword999!", "new_password": "ValidPassword123!"}, headers=headers)
+    assert r5.status_code == 400
+    assert "Current password verification failed" in r5.json()["detail"]
+
+    # Identical current and new password
+    r6 = client.post("/api/v1/auth/change-password", json={"current_password": "AgentPass123", "new_password": "AgentPass123"}, headers=headers)
+    assert r6.status_code == 400
+    assert "cannot be identical" in r6.json()["detail"]
+
 def test_session_invalidation_after_password_change(client: TestClient, db_session):
     agent = db_session.query(User).filter(User.role == UserRole.AGENT).first()
     # Reset agent password to known value
