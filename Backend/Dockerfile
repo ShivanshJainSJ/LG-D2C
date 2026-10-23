@@ -1,49 +1,51 @@
 # ==============================================================================
-# Livguard Quotation Management System - Backend Production Dockerfile
+# Production / Staging Container for Livguard Quotation Management Backend
+# Base image: Python 3.11 Slim (Debian-based)
 # ==============================================================================
+
 FROM python:3.11-slim
 
-# Set environment flags
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    DEBIAN_FRONTEND=noninteractive
+# Prevent bytecode generation and ensure immediate unbuffered logs
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 WORKDIR /app
 
-# Install system dependencies for Playwright headless Chromium and fonts
+# Install system libraries required by headless Chromium and SSL/networking utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    libpq5 \
-    fonts-liberation \
     libnss3 \
-    libxss1 \
-    libasound2 \
+    libnspr4 \
+    libatk1.0-0 \
     libatk-bridge2.0-0 \
-    libgtk-3-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
     libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
-# Install python dependencies
-COPY requirements.txt /app/
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install Python requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright Chromium headless engine and system dependencies
-RUN playwright install chromium --with-deps
+# Install Playwright Chromium binary into PLAYWRIGHT_BROWSERS_PATH
+RUN playwright install chromium
 
-# Copy application code
-COPY . /app/
+# Copy application code into container (filtered by .dockerignore)
+COPY . .
 
-# Ensure upload directory exists
-RUN mkdir -p /app/uploads
-
-# Expose standard FastAPI port
+# Expose default HTTP port
 EXPOSE 8000
 
-# Container healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8000/readyz || exit 1
-
-# Production entrypoint
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--proxy-headers"]
+# Start command: Dynamically binds to host-assigned $PORT (default 8000) with a single worker
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]

@@ -1,0 +1,50 @@
+# ==============================================================================
+# Docker Build Context Exclusions
+# Strict enforcement to prevent credentials, local DBs, and artifacts in images
+# ==============================================================================
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+env/
+venv/
+ENV/
+
+# Secrets and local configurations
+.env
+.env.*
+!.env.example
+
+# Local databases and SQLite files
+*.db
+*.sqlite3
+test.db
+
+# Private uploads and artifact directories
+uploads/private_artifacts/
+uploads/test_private_artifacts/
+
+# Generated test output files
+test_*.pdf
+test_*.png
+
+# Testing caches & logs
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# Git repository metadata
+.git/
+.gitignore
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

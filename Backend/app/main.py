@@ -458,7 +458,8 @@ def readiness_probe():
             db.execute(text("SELECT 1"))
         checks["database"] = "healthy"
     except Exception as e:
-        checks["database"] = f"unhealthy: {str(e)}"
+        logging.error(f"Readiness probe database connection failure: {type(e).__name__} - {e}")
+        checks["database"] = "unhealthy: connection failed"
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "not_ready", "checks": checks}
@@ -475,7 +476,8 @@ def readiness_probe():
                 content={"status": "not_ready", "checks": checks}
             )
     except Exception as e:
-        checks["storage"] = f"unhealthy: {str(e)}"
+        logging.error(f"Readiness probe storage check failure: {type(e).__name__} - {e}")
+        checks["storage"] = "unhealthy: storage inaccessible"
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"status": "not_ready", "checks": checks}
