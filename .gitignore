@@ -39,6 +39,7 @@ share/python-wheels/
 *.sqlite3
 *.db
 Backend/uploads/
+uploads/
 Backend/test.db
 test_*.pdf
 test_*.png

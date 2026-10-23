@@ -59,7 +59,16 @@ class DocumentService:
         
         created_dt = revision.created_at or datetime.now(timezone.utc)
         issue_date_str = created_dt.strftime("%d-%m-%Y")
-        validity_days = company_settings.quotation_validity_days if company_settings else 15
+
+        # Prioritize historical snapshot for validity period if present
+        snap_company = {}
+        if revision.company_snapshot:
+            try:
+                snap_company = json.loads(revision.company_snapshot)
+            except Exception:
+                pass
+
+        validity_days = snap_company.get("quotation_validity_days") or (company_settings.quotation_validity_days if company_settings else 15)
         expiry_dt = created_dt.timestamp() + (validity_days * 86400)
         expiry_date_str = datetime.fromtimestamp(expiry_dt, tz=timezone.utc).strftime("%d-%m-%Y")
 

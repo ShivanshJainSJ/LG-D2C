@@ -3,18 +3,23 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import json
 import logging
+import secrets
+import hashlib
 
 from app.core.database import get_db
 from app.core.dependencies import require_agent, log_audit_event
+from app.models.base import utc_now
 from app.models.user import User, UserRole
 from app.models.quotation import Quotation, QuotationRevision, QuotationItem, QuotationStatus
 from app.models.coupon import CouponRedemption
 from app.models.settings import CompanySettings, TaxSettings
+from app.models.sharing import QuotationShareLink, SharedQuotationAccessLog
 from app.schemas.quotation import QuotationCreateRequest, QuotationPreviewRequest, QuotationPreviewResponse
 from app.services.pricing_service import PricingService
 from app.services.numbering_service import NumberingService
 from app.services.document_service import DocumentService
 from app.services.customer_service import CustomerService
+from app.services.quotation_artifact_service import QuotationArtifactService
 
 router = APIRouter(prefix="/agent/quotations", tags=["Agent Quotations"])
 
@@ -185,7 +190,11 @@ def issue_new_quotation(
     company_snap = {
         "company_name": company_settings.company_name if company_settings else "Livguard",
         "phone": company_settings.phone if company_settings else "",
-        "terms": company_settings.terms_conditions if company_settings else ""
+        "terms": company_settings.terms_conditions if company_settings else "",
+        "address": company_settings.address if company_settings else "",
+        "email": company_settings.email if company_settings else "",
+        "website": company_settings.website if company_settings else "",
+        "quotation_validity_days": company_settings.quotation_validity_days if company_settings else 15
     }
     tax_snap = {
         "rate": float(calc_result["tax_rate"]),
@@ -405,7 +414,11 @@ def revise_quotation(
     company_snap = {
         "company_name": company_settings.company_name if company_settings else "Livguard",
         "phone": company_settings.phone if company_settings else "",
-        "terms": company_settings.terms_conditions if company_settings else ""
+        "terms": company_settings.terms_conditions if company_settings else "",
+        "address": company_settings.address if company_settings else "",
+        "email": company_settings.email if company_settings else "",
+        "website": company_settings.website if company_settings else "",
+        "quotation_validity_days": company_settings.quotation_validity_days if company_settings else 15
     }
     tax_snap = {
         "rate": float(calc_result["tax_rate"]),
@@ -601,3 +614,189 @@ def reuse_quotation(
         current_agent=current_agent,
         request=request
     )
+
+@router.post("/{quotation_id}/revisions/{revision_id}/share")
+async def create_or_reuse_share_link(
+    quotation_id: str,
+    revision_id: str,
+    request: Request,
+    regenerate: bool = False,
+    current_agent: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """
+    Creates or regenerates a cryptographically unguessable public sharing link for an issued quotation revision.
+    Guarantees that an immutable PDF artifact exists prior to sharing.
+    If an active link already exists and regenerate=False, returns active link metadata without generating broken URLs.
+    """
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    
+    if quotation.agent_id != current_agent.id and current_agent.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Access forbidden: This quotation belongs to another agent.")
+
+    if quotation.status == QuotationStatus.DRAFT:
+        raise HTTPException(status_code=400, detail="Cannot share a draft quotation. The quotation must be issued first.")
+
+    revision = db.query(QuotationRevision).filter(
+        QuotationRevision.id == revision_id,
+        QuotationRevision.quotation_id == quotation.id
+    ).first()
+    if not revision:
+        raise HTTPException(status_code=404, detail="Revision not found for this quotation")
+
+    # 1. Ensure immutable PDF artifact is sealed in storage
+    try:
+        await QuotationArtifactService.get_or_create_artifact(db, quotation, revision)
+    except Exception as e:
+        logging.error(f"Failed to seal PDF artifact for quotation {quotation_id} rev {revision_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to seal quotation artifact. Sharing link cannot be created.")
+
+    # 2. Check for existing active link
+    active_link = db.query(QuotationShareLink).filter(
+        QuotationShareLink.revision_id == revision.id,
+        QuotationShareLink.is_revoked == False
+    ).first()
+
+    if active_link and not regenerate:
+        return {
+            "is_new": False,
+            "active_link_exists": True,
+            "share_link_id": active_link.id,
+            "revision_id": revision.id,
+            "revision_number": revision.revision_number,
+            "created_at": active_link.created_at,
+            "message": "An active share link already exists for this revision. You can regenerate a new link if needed."
+        }
+
+    # If regenerate=True, revoke previous link
+    if active_link and regenerate:
+        active_link.is_revoked = True
+        active_link.revoked_at = utc_now()
+        active_link.revoked_by_id = current_agent.id
+
+    # 3. Generate 256-bit cryptographic unguessable raw token
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+    new_link = QuotationShareLink(
+        quotation_id=quotation.id,
+        revision_id=revision.id,
+        token_hash=token_hash,
+        created_by_id=current_agent.id,
+        is_revoked=False
+    )
+    db.add(new_link)
+    db.commit()
+    db.refresh(new_link)
+
+    log_audit_event(
+        db,
+        current_agent,
+        "CREATE_SHARE_LINK",
+        "QuotationShareLink",
+        new_link.id,
+        {"quotation_id": quotation.id, "revision_id": revision.id, "regenerated": bool(active_link)},
+        request
+    )
+
+    return {
+        "is_new": True,
+        "active_link_exists": False,
+        "share_link_id": new_link.id,
+        "revision_id": revision.id,
+        "revision_number": revision.revision_number,
+        "raw_token": raw_token,
+        "share_url": f"/shared/{raw_token}",
+        "created_at": new_link.created_at
+    }
+
+@router.get("/{quotation_id}/share-links")
+def list_quotation_share_links(
+    quotation_id: str,
+    current_agent: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """
+    Returns the history of all sharing links created for revisions of this quotation,
+    including active/revoked status, creation date, and view/download counts.
+    """
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    
+    if quotation.agent_id != current_agent.id and current_agent.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Access forbidden: This quotation belongs to another agent.")
+
+    links = db.query(QuotationShareLink).filter(
+        QuotationShareLink.quotation_id == quotation_id
+    ).order_by(QuotationShareLink.created_at.desc()).all()
+
+    results = []
+    for l in links:
+        view_count = sum(1 for log in l.access_logs if log.event_type == "VIEW")
+        download_count = sum(1 for log in l.access_logs if log.event_type == "DOWNLOAD")
+        results.append({
+            "id": l.id,
+            "revision_id": l.revision_id,
+            "revision_number": l.revision.revision_number if l.revision else 0,
+            "revision_label": l.revision.revision_label if l.revision else "Revision",
+            "is_revoked": l.is_revoked,
+            "created_at": l.created_at,
+            "revoked_at": l.revoked_at,
+            "last_accessed_at": l.last_accessed_at,
+            "view_count": view_count,
+            "download_count": download_count
+        })
+
+    return results
+
+@router.post("/{quotation_id}/share-links/{link_id}/revoke")
+def revoke_quotation_share_link(
+    quotation_id: str,
+    link_id: str,
+    request: Request,
+    current_agent: User = Depends(require_agent),
+    db: Session = Depends(get_db)
+):
+    """
+    Immediately revokes an active sharing link. Once revoked, any subsequent public access is denied.
+    """
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    
+    if quotation.agent_id != current_agent.id and current_agent.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Access forbidden: This quotation belongs to another agent.")
+
+    link = db.query(QuotationShareLink).filter(
+        QuotationShareLink.id == link_id,
+        QuotationShareLink.quotation_id == quotation.id
+    ).first()
+    if not link:
+        raise HTTPException(status_code=404, detail="Share link not found")
+
+    if link.is_revoked:
+        return {"message": "Share link is already revoked", "share_link_id": link.id}
+
+    link.is_revoked = True
+    link.revoked_at = utc_now()
+    link.revoked_by_id = current_agent.id
+    db.commit()
+
+    log_audit_event(
+        db,
+        current_agent,
+        "REVOKE_SHARE_LINK",
+        "QuotationShareLink",
+        link.id,
+        {"quotation_id": quotation.id, "revision_id": link.revision_id},
+        request
+    )
+
+    return {
+        "message": "Share link revoked successfully. Public access has been disabled.",
+        "share_link_id": link.id
+    }
+

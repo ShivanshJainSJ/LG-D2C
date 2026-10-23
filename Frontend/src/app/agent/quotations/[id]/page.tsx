@@ -21,11 +21,17 @@ import {
   CreditCard,
   Send,
   Loader2,
+  Share2,
+  Link2,
+  Ban,
+  Eye,
+  RefreshCw,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCurrency, formatDateTime, amountToWordsINR } from "@/lib/utils";
 import { getProductCategoryImage } from "@/lib/productCategories";
 import { CustomerQuotationHistoryModal } from "@/components/agent/CustomerQuotationHistoryModal";
+import { ShareQuotationModal } from "@/components/agent/ShareQuotationModal";
 
 interface QuotationItem {
   id: string;
@@ -77,6 +83,19 @@ interface ActiveProduct {
   unit_price: number;
 }
 
+interface ShareLinkHistoryItem {
+  id: string;
+  revision_id: string;
+  revision_number: number;
+  revision_label: string;
+  is_revoked: boolean;
+  created_at: string;
+  revoked_at: string | null;
+  last_accessed_at: string | null;
+  view_count: number;
+  download_count: number;
+}
+
 export default function AgentQuotationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -96,6 +115,13 @@ export default function AgentQuotationDetailPage() {
   const [revLoading, setRevLoading] = useState(false);
   const [revError, setRevError] = useState<string | null>(null);
 
+  // Public Sharing State
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedShareRev, setSelectedShareRev] = useState<Revision | null>(null);
+  const [shareLinks, setShareLinks] = useState<ShareLinkHistoryItem[]>([]);
+  const [shareLinksLoading, setShareLinksLoading] = useState(false);
+  const [revokingLinkId, setRevokingLinkId] = useState<string | null>(null);
+
   const fetchQuotation = async () => {
     try {
       setLoading(true);
@@ -108,9 +134,40 @@ export default function AgentQuotationDetailPage() {
     }
   };
 
+  const fetchShareLinks = async () => {
+    if (!quoteId) return;
+    try {
+      setShareLinksLoading(true);
+      const data = await api.get<ShareLinkHistoryItem[]>(`/agent/quotations/${quoteId}/share-links`);
+      setShareLinks(data);
+    } catch (err) {
+      console.error("Failed to fetch share links:", err);
+    } finally {
+      setShareLinksLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (quoteId) fetchQuotation();
+    if (quoteId) {
+      fetchQuotation();
+      fetchShareLinks();
+    }
   }, [quoteId]);
+
+  const handleRevokeShareLink = async (linkId: string) => {
+    if (!confirm("Are you sure you want to revoke this public sharing link? Any customer accessing this URL will immediately receive a 404/revoked message.")) {
+      return;
+    }
+    try {
+      setRevokingLinkId(linkId);
+      await api.post(`/agent/quotations/${quoteId}/share-links/${linkId}/revoke`);
+      await fetchShareLinks();
+    } catch (err: any) {
+      alert(err.message || "Failed to revoke share link.");
+    } finally {
+      setRevokingLinkId(null);
+    }
+  };
 
   const downloadDoc = async (revId: string, format: "pdf" | "png") => {
     try {
@@ -275,6 +332,19 @@ export default function AgentQuotationDetailPage() {
             </Link>
           )}
 
+          {quotation.status !== "DRAFT" && activeRevision && (
+            <button
+              onClick={() => {
+                setSelectedShareRev(activeRevision);
+                setShareModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Share Quotation</span>
+            </button>
+          )}
+
           <button
             onClick={openRevisionModal}
             disabled={isFrozen}
@@ -336,6 +406,19 @@ export default function AgentQuotationDetailPage() {
 
           {activeRevision && (
             <div className="flex items-center space-x-2">
+              {quotation.status !== "DRAFT" && (
+                <button
+                  onClick={() => {
+                    setSelectedShareRev(activeRevision);
+                    setShareModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 font-bold text-xs flex items-center space-x-1.5 transition shadow-sm"
+                  title="Generate or view shareable customer link"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Share</span>
+                </button>
+              )}
               <button
                 onClick={() => downloadDoc(activeRevision.id, "pdf")}
                 className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center space-x-1.5 transition shadow-sm"
@@ -509,6 +592,126 @@ export default function AgentQuotationDetailPage() {
         )}
       </div>
 
+      {/* Public Sharing Links Section (Only applicable if Quotation has been Issued) */}
+      {quotation.status !== "DRAFT" && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                <Link2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Public Customer Links</h2>
+                <p className="text-[11px] text-slate-500">
+                  Track customer views, downloads, and manage active public URLs.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={fetchShareLinks}
+                disabled={shareLinksLoading}
+                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:text-slate-900 transition hover:bg-slate-50 disabled:opacity-50"
+                title="Refresh links"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${shareLinksLoading ? "animate-spin" : ""}`} />
+              </button>
+              {activeRevision && (
+                <button
+                  onClick={() => {
+                    setSelectedShareRev(activeRevision);
+                    setShareModalOpen(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Create New Link</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5">
+            {shareLinks.length === 0 ? (
+              <div className="text-center py-6 text-slate-400 text-xs">
+                <Link2 className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="font-semibold text-slate-600">No public share links created yet.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Click "Share Quotation" above to create an immutable customer link.
+                </p>
+              </div>
+            ) : (
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-900 text-white text-[10px] uppercase font-bold">
+                    <tr>
+                      <th className="py-2.5 px-3">Revision</th>
+                      <th className="py-2.5 px-3">Status</th>
+                      <th className="py-2.5 px-3">Created</th>
+                      <th className="py-2.5 px-3 text-center">Views</th>
+                      <th className="py-2.5 px-3 text-center">Downloads</th>
+                      <th className="py-2.5 px-3">Last Accessed</th>
+                      <th className="py-2.5 px-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {shareLinks.map((link) => (
+                      <tr key={link.id} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3">
+                          <span className="font-bold text-slate-900">{link.revision_label}</span>
+                          <span className="text-[10px] text-slate-400 block">Rev #{link.revision_number}</span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {link.is_revoked ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">
+                              Revoked
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                              Active
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600">
+                          {formatDateTime(link.created_at)}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-flex items-center space-x-1 font-bold text-slate-800">
+                            <Eye className="w-3 h-3 text-slate-400" />
+                            <span>{link.view_count}</span>
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <span className="inline-flex items-center space-x-1 font-bold text-slate-800">
+                            <FileDown className="w-3 h-3 text-slate-400" />
+                            <span>{link.download_count}</span>
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-500 text-[11px]">
+                          {link.last_accessed_at ? formatDateTime(link.last_accessed_at) : "Never"}
+                        </td>
+                        <td className="py-2.5 px-3 text-right space-x-2">
+                          {!link.is_revoked && (
+                            <button
+                              onClick={() => handleRevokeShareLink(link.id)}
+                              disabled={revokingLinkId === link.id}
+                              className="text-red-600 hover:text-red-700 font-bold text-xs inline-flex items-center space-x-1 hover:underline disabled:opacity-50"
+                            >
+                              <Ban className="w-3 h-3" />
+                              <span>{revokingLinkId === link.id ? "Revoking..." : "Revoke"}</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Revision Modal */}
       {revisionModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -651,6 +854,22 @@ export default function AgentQuotationDetailPage() {
           router.push(`/agent/quotations/${result.new_quotation_id}`);
         }}
       />
+
+      {/* Share Quotation Modal */}
+      {selectedShareRev && (
+        <ShareQuotationModal
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+          quotationId={quotation.id}
+          quotationNumber={quotation.quotation_number || "QUOTATION"}
+          revisionId={selectedShareRev.id}
+          revisionNumber={selectedShareRev.revision_number}
+          revisionLabel={selectedShareRev.revision_label}
+          onLinkCreated={() => {
+            fetchShareLinks();
+          }}
+        />
+      )}
     </div>
   );
 }

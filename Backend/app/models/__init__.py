@@ -9,6 +9,7 @@ from app.models.order import Order, OrderStatus
 from app.models.settings import CompanySettings, TaxSettings, NumberingPolicy, TaxPricingPolicy
 from app.models.audit import AuditLog
 from app.models.product_import import ProductImportBatch
+from app.models.sharing import QuotationArtifact, QuotationShareLink, SharedQuotationAccessLog, ShareAccessEventType
 
 __all__ = [
     "Base",
@@ -36,5 +37,9 @@ __all__ = [
     "TaxSettings",
     "NumberingPolicy",
     "TaxPricingPolicy",
-    "AuditLog"
+    "AuditLog",
+    "QuotationArtifact",
+    "QuotationShareLink",
+    "SharedQuotationAccessLog",
+    "ShareAccessEventType"
 ]

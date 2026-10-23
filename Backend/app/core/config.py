@@ -33,6 +33,19 @@ class Settings(BaseSettings):
     
     # Uploads & Storage
     UPLOAD_DIR: str = "./uploads"
+    STORAGE_BACKEND: str = "local" # 'local' or 'r2'
+    PRIVATE_STORAGE_DIR: str = "./uploads/private_artifacts"
+
+    # Cloudflare R2 / S3-compatible Private Storage
+    R2_ACCOUNT_ID: Optional[str] = None
+    R2_ACCESS_KEY_ID: Optional[str] = None
+    R2_SECRET_ACCESS_KEY: Optional[str] = None
+    R2_BUCKET_NAME: Optional[str] = None
+    R2_ENDPOINT_URL: Optional[str] = None
+
+    # Reverse Proxy / Forwarded Header Trust
+    TRUST_PROXY_HEADERS: bool = False
+    TRUSTED_PROXIES: List[str] = ["127.0.0.1", "::1"]
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -77,6 +90,12 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "CRITICAL SECURITY ERROR: SQLite cannot be used as a production database. Please configure a PostgreSQL connection string (e.g. Neon, RDS)."
                 )
+            if self.STORAGE_BACKEND == "r2":
+                if not (self.R2_ACCOUNT_ID and self.R2_ACCESS_KEY_ID and self.R2_SECRET_ACCESS_KEY and self.R2_BUCKET_NAME):
+                    raise ValueError(
+                        "CRITICAL CONFIGURATION ERROR: Production R2 storage requires R2_ACCOUNT_ID, "
+                        "R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME to be configured."
+                    )
         else:
             # For development and test, provide a safe fallback if none was configured
             if not secret:
@@ -88,3 +107,4 @@ settings = Settings()
 
 # Ensure upload directory exists
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.PRIVATE_STORAGE_DIR, exist_ok=True)

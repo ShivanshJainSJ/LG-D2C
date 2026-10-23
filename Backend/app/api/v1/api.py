@@ -16,8 +16,12 @@ from app.api.v1.agent.quotations import router as agent_quotations_router
 from app.api.v1.agent.payments import router as agent_payments_router
 from app.api.v1.agent.dashboard import router as agent_dashboard_router
 from app.api.v1.customers import router as customers_router
+from app.api.v1.public.quotations import router as public_quotations_router
 
 api_router = APIRouter()
+
+# Public Customer Access (Unauthenticated, Token-Protected)
+api_router.include_router(public_quotations_router)
 
 # Auth
 api_router.include_router(auth_router)

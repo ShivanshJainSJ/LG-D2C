@@ -41,6 +41,7 @@ class Quotation(Base):
     revisions = relationship("QuotationRevision", back_populates="quotation", cascade="all, delete-orphan", order_by="QuotationRevision.revision_number.desc()")
     payments = relationship("Payment", back_populates="quotation", cascade="all, delete-orphan")
     order = relationship("Order", back_populates="quotation", uselist=False)
+    share_links = relationship("QuotationShareLink", back_populates="quotation", cascade="all, delete-orphan")
 
 class QuotationRevision(Base):
     __tablename__ = "quotation_revisions"
@@ -66,6 +67,8 @@ class QuotationRevision(Base):
     coupon = relationship("Coupon")
     created_by = relationship("User")
     items = relationship("QuotationItem", back_populates="revision", cascade="all, delete-orphan")
+    artifact = relationship("QuotationArtifact", back_populates="revision", uselist=False, cascade="all, delete-orphan")
+    share_links = relationship("QuotationShareLink", back_populates="revision", cascade="all, delete-orphan")
 
 class QuotationItem(Base):
     __tablename__ = "quotation_items"
