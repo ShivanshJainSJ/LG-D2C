@@ -400,6 +400,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
+    description=(
+        "Livguard Quotation Management System API.\n\n"
+        "### Swagger UI Authentication Workflow\n"
+        "1. Execute `POST /api/v1/auth/login` using the JSON credentials for your account.\n"
+        "2. Copy the `access_token` from the response.\n"
+        "3. Click the **Authorize** button (lock icon) at the top of this documentation page.\n"
+        "4. Paste your token into the **HTTPBearer** field and click **Authorize**."
+    ),
     lifespan=lifespan
 )
 

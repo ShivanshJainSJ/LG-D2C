@@ -12,7 +12,20 @@ from app.schemas.auth import LoginRequest, TokenResponse, PasswordResetRequest
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="Authenticate user and obtain JWT access token",
+    description=(
+        "Authenticates a user via JSON credentials (`email` and `password`). "
+        "Returns a JWT Bearer access token and user role.\n\n"
+        "**Swagger UI Authorization Workflow:**\n"
+        "1. Execute this endpoint with your email and password in the JSON body.\n"
+        "2. Copy the `access_token` string from the JSON response.\n"
+        "3. Click the **Authorize** button at the top of Swagger UI.\n"
+        "4. Paste the token into the **HTTPBearer** field and click **Authorize**."
+    )
+)
 @limiter.limit("10/minute")
 def login(request: Request, response: Response, login_data: LoginRequest, db: Session = Depends(get_db)):
     ip_addr = request.client.host if request.client else "unknown"

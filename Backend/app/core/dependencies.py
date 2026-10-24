@@ -1,5 +1,6 @@
+from typing import Optional
 from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 import json
@@ -9,17 +10,32 @@ from app.core.security import decode_access_token
 from app.models.user import User, UserRole
 from app.models.audit import AuditLog
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
+# HTTP Bearer security scheme for OpenAPI / Swagger UI authorization
+http_bearer = HTTPBearer(
+    auto_error=False,
+    description="Enter JWT Bearer token obtained from POST /api/v1/auth/login"
+)
+oauth2_scheme = http_bearer  # Backward-compatibility alias
 
-def get_token_from_header_or_cookie(request: Request, token: str = Depends(oauth2_scheme)) -> str:
-    if token:
-        return token
+def get_token_from_header_or_cookie(
+    request: Request,
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer)
+) -> str:
+    if auth and auth.credentials:
+        token = auth.credentials.strip()
+        # Handle cases where users accidentally type 'Bearer <token>' in the Swagger authorization dialog
+        if token.startswith("Bearer "):
+            token = token[7:].strip()
+        if token:
+            return token
+
     # Fallback to HTTP-only cookie if present
     cookie_token = request.cookies.get("access_token")
     if cookie_token:
         if cookie_token.startswith("Bearer "):
-            return cookie_token[7:]
-        return cookie_token
+            return cookie_token[7:].strip()
+        return cookie_token.strip()
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Not authenticated",
