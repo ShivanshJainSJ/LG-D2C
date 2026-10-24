@@ -1,19 +1,25 @@
 import os
 import asyncio
+import logging
+import base64
+import mimetypes
+import json
 from jinja2 import Environment, FileSystemLoader
 from playwright.sync_api import sync_playwright
 from datetime import datetime, timezone
-import json
-
-import base64
-import mimetypes
 
 from app.core.currency import amount_to_words_inr
 from app.core.product_categories import get_category_image_url
 
+logger = logging.getLogger(__name__)
+
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "documents")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+STATIC_ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static_assets")
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+ROOT_DIR = os.path.dirname(BACKEND_DIR)
 
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
 
@@ -23,18 +29,48 @@ def get_image_data_uri(path_or_url: str) -> str:
     if path_or_url.startswith("data:"):
         return path_or_url
     
-    # Try resolving path against common directories
-    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    # Handle external HTTP/HTTPS URLs
+    if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
+        if "/uploads/" in path_or_url:
+            clean_sub = path_or_url.split("/uploads/", 1)[1].lstrip("/\\")
+            path_or_url = os.path.join("uploads", clean_sub)
+        elif "/assets/" in path_or_url:
+            clean_sub = path_or_url.split("/assets/", 1)[1].lstrip("/\\")
+            path_or_url = os.path.join("assets", clean_sub)
+        else:
+            try:
+                import urllib.request
+                req = urllib.request.Request(
+                    path_or_url,
+                    headers={"User-Agent": "LivguardDocumentService/1.0"}
+                )
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    if resp.status == 200:
+                        content_type = resp.headers.get_content_type() or "image/jpeg"
+                        encoded = base64.b64encode(resp.read()).decode("utf-8")
+                        return f"data:{content_type};base64,{encoded}"
+            except Exception as e:
+                logger.warning(f"Failed to fetch remote image {path_or_url}: {e}")
+                return ""
+
     clean_path = path_or_url.lstrip("/\\")
+    filename = os.path.basename(clean_path)
     
     candidates = [
+        # 1. Direct path
         path_or_url,
-        os.path.join(root_dir, clean_path),
-        os.path.join(root_dir, "Backend", clean_path),
-        os.path.join(root_dir, "Frontend", "public", clean_path),
-        os.path.join(root_dir, "Backend", "uploads", clean_path),
-        os.path.join(root_dir, "Backend", "uploads", "products", os.path.basename(clean_path)),
-        os.path.join(root_dir, "Frontend", "public", "assets", os.path.basename(clean_path)),
+        # 2. Bundled package static assets (always present in container and deployment)
+        os.path.join(STATIC_ASSETS_DIR, filename),
+        os.path.join(STATIC_ASSETS_DIR, clean_path),
+        # 3. Backend uploads
+        os.path.join(BACKEND_DIR, clean_path),
+        os.path.join(BACKEND_DIR, "uploads", clean_path),
+        os.path.join(BACKEND_DIR, "uploads", "assets", filename),
+        os.path.join(BACKEND_DIR, "uploads", "products", filename),
+        # 4. Monorepo Frontend assets (for local development)
+        os.path.join(ROOT_DIR, "Frontend", "public", clean_path),
+        os.path.join(ROOT_DIR, "Frontend", "public", "assets", filename),
+        os.path.join(ROOT_DIR, "Frontend", "public", "uploads", "products", filename),
     ]
     
     for c in candidates:
@@ -42,13 +78,17 @@ def get_image_data_uri(path_or_url: str) -> str:
             try:
                 mime_type, _ = mimetypes.guess_type(c)
                 if not mime_type:
-                    mime_type = "image/jpeg"
+                    mime_type = "image/png" if c.lower().endswith(".png") else "image/jpeg"
                 with open(c, "rb") as f:
                     encoded = base64.b64encode(f.read()).decode("utf-8")
                     return f"data:{mime_type};base64,{encoded}"
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Failed reading image file {c}: {e}")
                 pass
-    return path_or_url
+
+    # If unresolvable, return empty string so broken relative strings are not injected into HTML
+    logger.warning(f"Could not resolve image asset: {path_or_url}")
+    return ""
 
 class DocumentService:
     get_image_data_uri = staticmethod(get_image_data_uri)
@@ -202,6 +242,29 @@ class DocumentService:
                 browser = p.chromium.launch(headless=True, args=DocumentService.CHROMIUM_CONTAINER_ARGS)
                 page = browser.new_page()
                 page.set_content(html_content, wait_until="networkidle")
+
+                # Ensure all images in the document have finished loading and verify natural dimensions
+                image_check = page.evaluate("""() => {
+                    const imgs = Array.from(document.querySelectorAll('img'));
+                    return imgs.map((img, idx) => ({
+                        idx: idx,
+                        src: img.src ? (img.src.startsWith('data:') ? img.src.substring(0, 30) + '...' : img.src) : '',
+                        alt: img.alt || '',
+                        complete: img.complete,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight
+                    }));
+                }""")
+                broken_images = [
+                    img for img in image_check
+                    if not img["complete"] or img["naturalWidth"] <= 0 or img["naturalHeight"] <= 0
+                ]
+                if broken_images:
+                    err_msg = f"PDF generation failed: {len(broken_images)} broken or unrenderable image(s) detected: {broken_images}"
+                    logger.error(err_msg)
+                    browser.close()
+                    raise RuntimeError(err_msg)
+
                 pdf_bytes = page.pdf(
                     format="A4",
                     print_background=True,
@@ -223,6 +286,28 @@ class DocumentService:
                     device_scale_factor=2
                 )
                 page.set_content(html_content, wait_until="networkidle")
+
+                image_check = page.evaluate("""() => {
+                    const imgs = Array.from(document.querySelectorAll('img'));
+                    return imgs.map((img, idx) => ({
+                        idx: idx,
+                        src: img.src ? (img.src.startsWith('data:') ? img.src.substring(0, 30) + '...' : img.src) : '',
+                        alt: img.alt || '',
+                        complete: img.complete,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight
+                    }));
+                }""")
+                broken_images = [
+                    img for img in image_check
+                    if not img["complete"] or img["naturalWidth"] <= 0 or img["naturalHeight"] <= 0
+                ]
+                if broken_images:
+                    err_msg = f"PNG generation failed: {len(broken_images)} broken or unrenderable image(s) detected: {broken_images}"
+                    logger.error(err_msg)
+                    browser.close()
+                    raise RuntimeError(err_msg)
+
                 png_bytes = page.screenshot(type="png", full_page=True)
                 browser.close()
                 return png_bytes

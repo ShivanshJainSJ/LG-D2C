@@ -40,8 +40,12 @@ share/python-wheels/
 *.sqlite
 *.sqlite3
 *.db
-Backend/uploads/
-uploads/
+/Backend/uploads/*
+!/Backend/uploads/assets/
+!/Backend/uploads/products/
+/uploads/*
+!/uploads/assets/
+!/uploads/products/
 Backend/test.db
 test_*.pdf
 test_*.png

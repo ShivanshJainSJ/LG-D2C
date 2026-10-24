@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -147,14 +148,14 @@ async def download_public_quotation_pdf(
         revision=revision
     )
 
-    clean_num = (quotation.quotation_number or "quotation").replace("/", "_")
+    clean_num = re.sub(r"[^a-zA-Z0-9_-]", "_", quotation.quotation_number or "quotation")
     filename = f"Livguard_Quotation_{clean_num}_Rev{revision.revision_number}.pdf"
 
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'inline; filename="{filename}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "no-store, no-cache, must-revalidate, private",
             "Pragma": "no-cache",
