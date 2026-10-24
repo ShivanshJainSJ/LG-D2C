@@ -1,6 +1,7 @@
 import os
 import uuid
 import logging
+from typing import Optional
 from contextlib import asynccontextmanager
 from decimal import Decimal
 from fastapi import FastAPI, Request, Response, status
@@ -30,12 +31,15 @@ from app.core.product_categories import (
     CATEGORY_IMAGE_ASSETS
 )
 
-def init_db_and_seed():
+def init_db_and_seed(db_engine=None, db_session_factory=None):
+    target_engine = db_engine or engine
+    target_session_factory = db_session_factory or SessionLocal
+
     # Create tables
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(bind=target_engine)
 
     # Ensure schema migrations for newly added columns if table pre-existed
-    with engine.connect() as conn:
+    with target_engine.connect() as conn:
         try:
             conn.execute(text("SELECT normalized_mobile FROM customers LIMIT 1"))
         except Exception:
@@ -68,7 +72,7 @@ def init_db_and_seed():
             except Exception:
                 pass
 
-    db = SessionLocal()
+    db = target_session_factory()
     try:
         # 1. Seed Company Settings if not present
         comp = db.query(CompanySettings).first()
@@ -104,13 +108,48 @@ def init_db_and_seed():
             )
             db.add(tax)
 
-        # 3. Seed Users based on Environment
-        if settings.ENVIRONMENT in ("development", "test"):
-            # Seed Dev/Test Admin User if not already present
-            admin = db.query(User).filter(User.email == "admin@livguard.com").first()
+        # 3. Seed / Resolve Administrator and Users
+        admin: Optional[User] = None
+        env_lower = (settings.ENVIRONMENT or "").strip().lower()
+        is_dev_or_test = env_lower in ("development", "test")
+
+        # Explicitly configured initial admin via environment variables (any environment)
+        if settings.INITIAL_ADMIN_EMAIL and settings.INITIAL_ADMIN_PASSWORD:
+            admin_email = settings.INITIAL_ADMIN_EMAIL.strip().lower()
+            admin = db.query(User).filter(User.email == admin_email).first()
             if not admin:
-                init_admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD", "Admin@123")
                 admin = User(
+                    email=admin_email,
+                    hashed_password=get_password_hash(settings.INITIAL_ADMIN_PASSWORD),
+                    full_name=f"{env_lower.capitalize()} Administrator",
+                    role=UserRole.ADMIN,
+                    is_active=True
+                )
+                db.add(admin)
+                db.flush()
+                logging.info(f"{env_lower.capitalize()} initial admin account bootstrapped successfully.")
+            else:
+                if admin.role != UserRole.ADMIN or not admin.is_active:
+                    role_str = admin.role.value if hasattr(admin.role, "value") else str(admin.role)
+                    logging.error(
+                        f"INITIAL_ADMIN_EMAIL '{admin_email}' exists but cannot be used as administrator: "
+                        f"role={role_str}, is_active={admin.is_active}."
+                    )
+                    if not is_dev_or_test:
+                        raise ValueError(
+                            f"Configured INITIAL_ADMIN_EMAIL '{admin_email}' exists but is not an active administrator "
+                            f"(role={role_str}, is_active={admin.is_active})."
+                        )
+                    admin = None
+                else:
+                    logging.info(f"Existing active admin account found for {admin_email}.")
+
+        if is_dev_or_test:
+            # Seed Dev/Test Admin User if not already present
+            dev_admin = db.query(User).filter(User.email == "admin@livguard.com").first()
+            if not dev_admin:
+                init_admin_pwd = os.getenv("INITIAL_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD", "Admin@123")
+                dev_admin = User(
                     email="admin@livguard.com",
                     hashed_password=get_password_hash(init_admin_pwd),
                     full_name="Livguard Central Admin",
@@ -118,8 +157,10 @@ def init_db_and_seed():
                     mobile="9876543210",
                     is_active=True
                 )
-                db.add(admin)
+                db.add(dev_admin)
                 db.flush()
+            if not admin:
+                admin = dev_admin
 
             # Seed Dev/Test Agent User if not already present
             agent = db.query(User).filter(User.email == "agent@livguard.com").first()
@@ -136,21 +177,8 @@ def init_db_and_seed():
                 db.add(agent)
                 db.flush()
         else:
-            # Production: NEVER seed publicly known demo credentials
-            logging.info("Production mode: skipping default demo credentials seeding.")
-            if settings.INITIAL_ADMIN_EMAIL and settings.INITIAL_ADMIN_PASSWORD:
-                prod_admin = db.query(User).filter(User.email == settings.INITIAL_ADMIN_EMAIL.strip().lower()).first()
-                if not prod_admin:
-                    prod_admin = User(
-                        email=settings.INITIAL_ADMIN_EMAIL.strip().lower(),
-                        hashed_password=get_password_hash(settings.INITIAL_ADMIN_PASSWORD),
-                        full_name="Production Administrator",
-                        role=UserRole.ADMIN,
-                        is_active=True
-                    )
-                    db.add(prod_admin)
-                    db.flush()
-                    logging.info("Production initial admin account bootstrapped successfully.")
+            # Staging / Production: NEVER seed publicly known demo credentials
+            logging.info(f"{env_lower.capitalize()} mode: skipping default demo credentials seeding.")
 
         # 5. Seed Real Livguard Products across all 5 canonical categories
         products_data = [
@@ -243,13 +271,16 @@ def init_db_and_seed():
                 )
                 db.add(p)
                 db.flush()
-                db.add(PriceHistory(
-                    product_id=p.id,
-                    old_price=Decimal("0.00"),
-                    new_price=p.base_price,
-                    changed_by_id=admin.id,
-                    reason="Initial catalog seeding"
-                ))
+                if admin and admin.id:
+                    db.add(PriceHistory(
+                        product_id=p.id,
+                        old_price=Decimal("0.00"),
+                        new_price=p.base_price,
+                        changed_by_id=admin.id,
+                        reason="Initial catalog seeding"
+                    ))
+                else:
+                    logging.info(f"Skipping initial PriceHistory entry for {p.sku}: no administrator available.")
             else:
                 existing_p.category = p_data["category"]
                 existing_p.image_url = p_data["image_url"]
@@ -280,18 +311,21 @@ def init_db_and_seed():
         # 6. Seed Sample Active Coupon
         coupon = db.query(Coupon).filter(Coupon.code == "LIVGUARD10").first()
         if not coupon:
-            coupon = Coupon(
-                code="LIVGUARD10",
-                discount_type=CouponDiscountType.PERCENTAGE,
-                discount_value=Decimal("10.00"),
-                max_discount=Decimal("5000.00"),
-                min_subtotal=Decimal("20000.00"),
-                usage_limit=100,
-                per_agent_limit=20,
-                is_active=True,
-                created_by_id=admin.id
-            )
-            db.add(coupon)
+            if admin and admin.id:
+                coupon = Coupon(
+                    code="LIVGUARD10",
+                    discount_type=CouponDiscountType.PERCENTAGE,
+                    discount_value=Decimal("10.00"),
+                    max_discount=Decimal("5000.00"),
+                    min_subtotal=Decimal("20000.00"),
+                    usage_limit=100,
+                    per_agent_limit=20,
+                    is_active=True,
+                    created_by_id=admin.id
+                )
+                db.add(coupon)
+            else:
+                logging.info("Skipping sample coupon LIVGUARD10: no administrator available to associate as creator.")
 
         db.commit()
 
@@ -357,7 +391,8 @@ async def lifespan(app: FastAPI):
         init_db_and_seed()
     except Exception as e:
         logging.exception(f"Database initialization error on startup: {e}")
-        if settings.ENVIRONMENT == "production":
+        env_lower = (settings.ENVIRONMENT or "").strip().lower()
+        if env_lower in ("production", "staging"):
             raise e
     yield
     # Shutdown
