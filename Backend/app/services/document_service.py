@@ -4,6 +4,7 @@ import logging
 import base64
 import mimetypes
 import json
+from functools import lru_cache
 from jinja2 import Environment, FileSystemLoader
 from playwright.sync_api import sync_playwright
 from datetime import datetime, timezone
@@ -23,6 +24,7 @@ ROOT_DIR = os.path.dirname(BACKEND_DIR)
 
 jinja_env = Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
 
+@lru_cache(maxsize=128)
 def get_image_data_uri(path_or_url: str) -> str:
     if not path_or_url:
         return ""
@@ -57,17 +59,19 @@ def get_image_data_uri(path_or_url: str) -> str:
     filename = os.path.basename(clean_path)
     
     candidates = [
-        # 1. Direct path
-        path_or_url,
-        # 2. Bundled package static assets (always present in container and deployment)
+        # 1. Bundled package static assets (always present, optimized, canonical)
         os.path.join(STATIC_ASSETS_DIR, filename),
         os.path.join(STATIC_ASSETS_DIR, clean_path),
+        # 2. Direct absolute path if provided
+        path_or_url if os.path.isabs(path_or_url) else "",
         # 3. Backend uploads
         os.path.join(BACKEND_DIR, clean_path),
         os.path.join(BACKEND_DIR, "uploads", clean_path),
         os.path.join(BACKEND_DIR, "uploads", "assets", filename),
         os.path.join(BACKEND_DIR, "uploads", "products", filename),
-        # 4. Monorepo Frontend assets (for local development)
+        # 4. Monorepo root and Frontend assets (for local development fallback)
+        os.path.join(ROOT_DIR, filename),
+        os.path.join(ROOT_DIR, clean_path),
         os.path.join(ROOT_DIR, "Frontend", "public", clean_path),
         os.path.join(ROOT_DIR, "Frontend", "public", "assets", filename),
         os.path.join(ROOT_DIR, "Frontend", "public", "uploads", "products", filename),
@@ -118,6 +122,9 @@ class DocumentService:
             cat = item.product.category if item.product else None
             raw_img = item.image_url or (item.product.image_url if item.product else None) or get_category_image_url(cat)
             data_uri = get_image_data_uri(raw_img) if raw_img else ""
+            if not data_uri:
+                # Deterministic fallback to standard catalog product artwork
+                data_uri = get_image_data_uri("inverter.png")
             
             # Parse description bullets
             desc_text = item.description or ""
@@ -150,6 +157,13 @@ class DocumentService:
             or get_image_data_uri("assets/livguard_logo.png")
             or logo_quotation_uri
         )
+
+        if not banner_uri:
+            raise RuntimeError("Required quotation header banner image could not be resolved from static assets.")
+        if not logo_quotation_uri:
+            raise RuntimeError("Required quotation title logo could not be resolved from static assets.")
+        if not logo_uri:
+            raise RuntimeError("Required quotation footer logo could not be resolved from static assets.")
 
         total_quantity = sum(item.quantity for item in revision.items)
         amount_words = amount_to_words_inr(revision.grand_total)
@@ -255,6 +269,12 @@ class DocumentService:
                         naturalHeight: img.naturalHeight
                     }));
                 }""")
+                if "quotation-header-stack" in html_content and len(image_check) < 3:
+                    err_msg = f"PDF generation failed: Expected at least 3 required images (banner, header logo, footer logo), but found {len(image_check)} image element(s)."
+                    logger.error(err_msg)
+                    browser.close()
+                    raise RuntimeError(err_msg)
+
                 broken_images = [
                     img for img in image_check
                     if not img["complete"] or img["naturalWidth"] <= 0 or img["naturalHeight"] <= 0
@@ -298,6 +318,12 @@ class DocumentService:
                         naturalHeight: img.naturalHeight
                     }));
                 }""")
+                if "quotation-header-stack" in html_content and len(image_check) < 3:
+                    err_msg = f"PNG generation failed: Expected at least 3 required images, but found {len(image_check)} image element(s)."
+                    logger.error(err_msg)
+                    browser.close()
+                    raise RuntimeError(err_msg)
+
                 broken_images = [
                     img for img in image_check
                     if not img["complete"] or img["naturalWidth"] <= 0 or img["naturalHeight"] <= 0

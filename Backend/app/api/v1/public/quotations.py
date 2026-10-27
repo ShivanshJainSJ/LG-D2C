@@ -16,17 +16,41 @@ from app.services.quotation_artifact_service import QuotationArtifactService
 
 router = APIRouter(prefix="/public/quotations", tags=["Public Customer Quotation"])
 
-def get_link_by_token(token: str, db: Session) -> QuotationShareLink:
-    if not token or len(token.strip()) < 16:
+def normalize_quotation_slug(quote_num: str) -> str:
+    if not quote_num:
+        return ""
+    return re.sub(r"[^a-zA-Z0-9]+", "-", quote_num.strip()).strip("-").upper()
+
+def validate_quotation_number_match(link: QuotationShareLink, requested_quotation_number: str | None = None):
+    if requested_quotation_number:
+        req_norm = normalize_quotation_slug(requested_quotation_number)
+        actual_norm = normalize_quotation_slug(link.quotation.quotation_number) if link.quotation else ""
+        if req_norm != actual_norm:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quotation link is invalid or does not match quotation number."
+            )
+
+def get_link_by_code_or_token(identifier: str, db: Session) -> QuotationShareLink:
+    if not identifier:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quotation link is invalid or has been revoked."
         )
 
-    token_hash = hashlib.sha256(token.strip().encode("utf-8")).hexdigest()
+    clean_id = identifier.strip()
+
+    # 1. First, try looking up by short_code
     link = db.query(QuotationShareLink).filter(
-        QuotationShareLink.token_hash == token_hash
+        QuotationShareLink.short_code == clean_id
     ).first()
+
+    # 2. If not found by short_code and length >= 16, try looking up by SHA-256 token hash (legacy)
+    if not link and len(clean_id) >= 16:
+        token_hash = hashlib.sha256(clean_id.encode("utf-8")).hexdigest()
+        link = db.query(QuotationShareLink).filter(
+            QuotationShareLink.token_hash == token_hash
+        ).first()
 
     if not link or link.is_revoked:
         raise HTTPException(
@@ -35,6 +59,9 @@ def get_link_by_token(token: str, db: Session) -> QuotationShareLink:
         )
 
     return link
+
+def get_link_by_token(token: str, db: Session) -> QuotationShareLink:
+    return get_link_by_code_or_token(token, db)
 
 def record_access_event(link: QuotationShareLink, event_type: str, request: Request, db: Session):
     try:
@@ -61,6 +88,7 @@ def get_public_quotation_details(
     token: str,
     request: Request,
     response: Response,
+    quotation_number: str | None = None,
     db: Session = Depends(get_db)
 ):
     """
@@ -72,6 +100,7 @@ def get_public_quotation_details(
     response.headers["Expires"] = "0"
 
     link = get_link_by_token(token, db)
+    validate_quotation_number_match(link, quotation_number)
     record_access_event(link, ShareAccessEventType.VIEW.value, request, db)
 
     quotation = link.quotation
@@ -107,6 +136,11 @@ def get_public_quotation_details(
         for item in revision.items
     ]
 
+    clean_quote_num = re.sub(r"[^a-zA-Z0-9]+", "-", (quotation.quotation_number or "QUOTE").strip()).strip("-")
+
+    code = link.short_code or token
+    pdf_download_url = f"/api/v1/public/quotations/q/{clean_quote_num}/{code}/pdf" if link.short_code else f"/api/v1/public/quotations/{clean_quote_num}/{token}/pdf"
+
     return {
         "quotation_number": quotation.quotation_number or "QUOTATION",
         "revision_label": revision.revision_label,
@@ -122,20 +156,59 @@ def get_public_quotation_details(
         "agent_name": quotation.agent.full_name if quotation.agent else "Livguard Sales Team",
         "agent_mobile": quotation.agent.mobile if quotation.agent and quotation.agent.mobile else None,
         "items": items_data,
-        "pdf_download_url": f"/api/v1/public/quotations/{token}/pdf"
+        "pdf_download_url": pdf_download_url
     }
+
+@router.get("/q/{quotation_number}/{short_code}/pdf")
+@limiter.limit("60/minute")
+async def download_public_quotation_pdf_short(
+    quotation_number: str,
+    short_code: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Public customer endpoint to stream or download PDF using short code link /q/{quotation_number}/{short_code}.
+    """
+    return await download_public_quotation_pdf(
+        token=short_code,
+        request=request,
+        quotation_number=quotation_number,
+        db=db
+    )
+
+@router.get("/{quotation_number}/{token}/pdf")
+@limiter.limit("60/minute")
+async def download_public_quotation_pdf_with_number(
+    quotation_number: str,
+    token: str,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    Public customer endpoint to stream or download the exact immutable quotation PDF
+    with strict quotation number matching.
+    """
+    return await download_public_quotation_pdf(
+        token=token,
+        request=request,
+        quotation_number=quotation_number,
+        db=db
+    )
 
 @router.get("/{token}/pdf")
 @limiter.limit("60/minute")
 async def download_public_quotation_pdf(
     token: str,
     request: Request,
+    quotation_number: str | None = None,
     db: Session = Depends(get_db)
 ):
     """
     Public customer endpoint to stream or download the exact immutable quotation PDF.
     """
     link = get_link_by_token(token, db)
+    validate_quotation_number_match(link, quotation_number)
     record_access_event(link, ShareAccessEventType.DOWNLOAD.value, request, db)
 
     quotation = link.quotation
@@ -161,4 +234,44 @@ async def download_public_quotation_pdf(
             "Pragma": "no-cache",
             "Expires": "0"
         }
+    )
+
+@router.get("/q/{quotation_number}/{short_code}")
+@limiter.limit("60/minute")
+def get_public_quotation_details_short(
+    quotation_number: str,
+    short_code: str,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """
+    Public customer endpoint to fetch metadata using short code link /q/{quotation_number}/{short_code}.
+    """
+    return get_public_quotation_details(
+        token=short_code,
+        request=request,
+        response=response,
+        quotation_number=quotation_number,
+        db=db
+    )
+
+@router.get("/{quotation_number}/{token}")
+@limiter.limit("60/minute")
+def get_public_quotation_details_with_number(
+    quotation_number: str,
+    token: str,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """
+    Public customer endpoint to fetch metadata with quotation number verification.
+    """
+    return get_public_quotation_details(
+        token=token,
+        request=request,
+        response=response,
+        quotation_number=quotation_number,
+        db=db
     )

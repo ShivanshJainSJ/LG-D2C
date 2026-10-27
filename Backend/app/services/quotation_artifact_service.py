@@ -26,11 +26,12 @@ class QuotationArtifactService:
         db: Session,
         quotation: Quotation,
         revision: QuotationRevision,
-        storage: StorageProvider = None
+        storage: StorageProvider = None,
+        force_regenerate: bool = False
     ) -> Tuple[QuotationArtifact, bytes, bool]:
         """
         Retrieves the existing immutable artifact for a revision, or generates and
-        persists a new one if none exists.
+        persists a new one if none exists (or if force_regenerate is True).
         
         Returns:
             Tuple[QuotationArtifact, bytes, bool]: (artifact_record, pdf_bytes, is_newly_created)
@@ -43,7 +44,7 @@ class QuotationArtifactService:
             QuotationArtifact.revision_id == revision.id
         ).first()
 
-        if existing_artifact:
+        if existing_artifact and not force_regenerate:
             try:
                 # Retrieve existing immutable bytes from private storage
                 pdf_bytes = await storage.get(existing_artifact.storage_key)

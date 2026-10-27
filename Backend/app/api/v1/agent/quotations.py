@@ -5,6 +5,17 @@ import json
 import logging
 import secrets
 import hashlib
+import re
+import string
+
+BASE62_ALPHABET = string.ascii_letters + string.digits
+
+def generate_short_code(length: int = 12) -> str:
+    """
+    Generates a cryptographically random, unguessable URL-safe short code.
+    12 Base62 characters provide 62^12 ≈ 3.22 x 10^21 combinations.
+    """
+    return "".join(secrets.choice(BASE62_ALPHABET) for _ in range(length))
 
 from app.core.database import get_db
 from app.core.dependencies import require_agent, log_audit_event
@@ -654,18 +665,32 @@ async def create_or_reuse_share_link(
         raise HTTPException(status_code=500, detail="Failed to seal quotation artifact. Sharing link cannot be created.")
 
     # 2. Check for existing active link
+    clean_quote_num = re.sub(r"[^a-zA-Z0-9]+", "-", (quotation.quotation_number or "QUOTE").strip()).strip("-")
     active_link = db.query(QuotationShareLink).filter(
         QuotationShareLink.revision_id == revision.id,
         QuotationShareLink.is_revoked == False
     ).first()
 
     if active_link and not regenerate:
+        # Guarantee short_code is populated on reused link
+        if not active_link.short_code:
+            for _ in range(10):
+                cand = generate_short_code(12)
+                if not db.query(QuotationShareLink).filter(QuotationShareLink.short_code == cand).first():
+                    active_link.short_code = cand
+                    db.commit()
+                    db.refresh(active_link)
+                    break
+        share_url = f"/q/{clean_quote_num}/{active_link.short_code}" if active_link.short_code else f"/shared/{clean_quote_num}/{active_link.id}"
         return {
             "is_new": False,
             "active_link_exists": True,
             "share_link_id": active_link.id,
             "revision_id": revision.id,
             "revision_number": revision.revision_number,
+            "quotation_number": clean_quote_num,
+            "short_code": active_link.short_code,
+            "share_url": share_url,
             "created_at": active_link.created_at,
             "message": "An active share link already exists for this revision. You can regenerate a new link if needed."
         }
@@ -676,14 +701,24 @@ async def create_or_reuse_share_link(
         active_link.revoked_at = utc_now()
         active_link.revoked_by_id = current_agent.id
 
-    # 3. Generate 256-bit cryptographic unguessable raw token
+    # 3. Generate 256-bit cryptographic unguessable raw token and 12-char unique short code
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+    short_code = None
+    for _ in range(10):
+        cand = generate_short_code(12)
+        if not db.query(QuotationShareLink).filter(QuotationShareLink.short_code == cand).first():
+            short_code = cand
+            break
+    if not short_code:
+        raise HTTPException(status_code=500, detail="Failed to allocate unique short code for share link.")
 
     new_link = QuotationShareLink(
         quotation_id=quotation.id,
         revision_id=revision.id,
         token_hash=token_hash,
+        short_code=short_code,
         created_by_id=current_agent.id,
         is_revoked=False
     )
@@ -697,7 +732,7 @@ async def create_or_reuse_share_link(
         "CREATE_SHARE_LINK",
         "QuotationShareLink",
         new_link.id,
-        {"quotation_id": quotation.id, "revision_id": revision.id, "regenerated": bool(active_link)},
+        {"quotation_id": quotation.id, "revision_id": revision.id, "short_code": short_code, "regenerated": bool(active_link)},
         request
     )
 
@@ -708,7 +743,9 @@ async def create_or_reuse_share_link(
         "revision_id": revision.id,
         "revision_number": revision.revision_number,
         "raw_token": raw_token,
-        "share_url": f"/shared/{raw_token}",
+        "short_code": short_code,
+        "quotation_number": clean_quote_num,
+        "share_url": f"/q/{clean_quote_num}/{short_code}",
         "created_at": new_link.created_at
     }
 

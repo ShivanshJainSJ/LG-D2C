@@ -1,5 +1,6 @@
 import pytest
 import hashlib
+import re
 from decimal import Decimal
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -84,14 +85,18 @@ def test_authorized_agent_creates_share_link(client: TestClient, db_session: Ses
     data = resp.json()
     assert data["is_new"] is True
     assert "raw_token" in data
-    assert data["share_url"].startswith("/shared/")
+    assert "short_code" in data
+    assert len(data["short_code"]) >= 12
+    assert data["share_url"].startswith("/q/")
     raw_token = data["raw_token"]
+    short_code = data["short_code"]
 
     # Verify token hash is stored in database, NOT raw token
     stored_link = db_session.query(QuotationShareLink).filter(QuotationShareLink.id == data["share_link_id"]).first()
     assert stored_link is not None
     assert stored_link.token_hash == hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
     assert stored_link.token_hash != raw_token
+    assert stored_link.short_code == short_code
     assert stored_link.is_revoked is False
 
 def test_unauthorized_agent_forbidden(client: TestClient, db_session: Session):
@@ -350,3 +355,116 @@ def test_agent_cannot_manage_other_agent_share_links(client: TestClient, db_sess
         headers={"Authorization": f"Bearer {other_token}"}
     )
     assert revoke_resp.status_code == 403
+
+def test_short_code_share_link_generation_and_direct_download(client: TestClient, db_session: Session):
+    quote, rev0, agent, _ = setup_issued_quotation(db_session)
+    token = create_access_token(subject=agent.id, role=agent.role.value)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.post(f"/api/v1/agent/quotations/{quote.id}/revisions/{rev0.id}/share", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["is_new"] is True
+    assert "raw_token" in data
+    assert "short_code" in data
+    assert "quotation_number" in data
+    clean_quote_num = data["quotation_number"]
+    short_code = data["short_code"]
+    raw_token = data["raw_token"]
+
+    # Verify short code format: cryptographically random >= 12 chars
+    assert len(short_code) >= 12
+    assert re.match(r"^[a-zA-Z0-9]+$", short_code)
+
+    # Verify share link format is /q/{quotation_number}/{short_code}
+    expected_share_url = f"/q/{clean_quote_num}/{short_code}"
+    assert data["share_url"] == expected_share_url
+
+    # 1. Successful download using /q/{quotation_number}/{short_code}/pdf
+    download_resp = client.get(f"/api/v1/public/quotations/q/{clean_quote_num}/{short_code}/pdf")
+    assert download_resp.status_code == 200
+    assert download_resp.headers["content-type"] == "application/pdf"
+    assert "attachment" in download_resp.headers["content-disposition"]
+    pdf_bytes = download_resp.content
+    assert pdf_bytes.startswith(b"%PDF")
+
+    # 2. Strict PDF size check: must achieve <= 300 KB target
+    assert len(pdf_bytes) < 300 * 1024, f"Generated PDF is {len(pdf_bytes):,} bytes, exceeding 300 KB!"
+
+    # 3. Successful metadata view using /q/{quotation_number}/{short_code}
+    details_resp = client.get(f"/api/v1/public/quotations/q/{clean_quote_num}/{short_code}")
+    assert details_resp.status_code == 200
+    details = details_resp.json()
+    assert details["quotation_number"] == quote.quotation_number
+    assert details["pdf_download_url"] == f"/api/v1/public/quotations/q/{clean_quote_num}/{short_code}/pdf"
+
+    # 4. Verify access tracking recorded both VIEW and DOWNLOAD
+    link = db_session.query(QuotationShareLink).filter(QuotationShareLink.short_code == short_code).first()
+    assert link is not None
+    events = [log.event_type for log in link.access_logs]
+    assert "VIEW" in events
+    assert "DOWNLOAD" in events
+
+def test_short_code_and_quotation_number_mismatch_fails_with_404(client: TestClient, db_session: Session):
+    quote, rev0, agent, _ = setup_issued_quotation(db_session)
+    token = create_access_token(subject=agent.id, role=agent.role.value)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.post(f"/api/v1/agent/quotations/{quote.id}/revisions/{rev0.id}/share", headers=headers)
+    short_code = resp.json()["short_code"]
+
+    # Attempt download with mismatched quotation number -> 404
+    wrong_download = client.get(f"/api/v1/public/quotations/q/LG-99-9999/{short_code}/pdf")
+    assert wrong_download.status_code == 404
+    assert "does not match" in wrong_download.json()["detail"]
+
+    # Attempt metadata view with mismatched quotation number -> 404
+    wrong_details = client.get(f"/api/v1/public/quotations/q/LG-99-9999/{short_code}")
+    assert wrong_details.status_code == 404
+    assert "does not match" in wrong_details.json()["detail"]
+
+    # Attempt download with completely invalid random short code -> 404
+    invalid_download = client.get("/api/v1/public/quotations/q/LQ-2026-SHARE-001/NonExistentCode123/pdf")
+    assert invalid_download.status_code == 404
+
+def test_revoked_short_code_returns_404(client: TestClient, db_session: Session):
+    quote, rev0, agent, _ = setup_issued_quotation(db_session)
+    token = create_access_token(subject=agent.id, role=agent.role.value)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.post(f"/api/v1/agent/quotations/{quote.id}/revisions/{rev0.id}/share", headers=headers)
+    link_id = resp.json()["share_link_id"]
+    short_code = resp.json()["short_code"]
+    clean_quote_num = resp.json()["quotation_number"]
+
+    # Revoke link
+    revoke_resp = client.post(f"/api/v1/agent/quotations/{quote.id}/share-links/{link_id}/revoke", headers=headers)
+    assert revoke_resp.status_code == 200
+
+    # Short code access is now 404
+    revoked_resp = client.get(f"/api/v1/public/quotations/q/{clean_quote_num}/{short_code}/pdf")
+    assert revoked_resp.status_code == 404
+
+def test_backward_compatibility_shared_and_legacy_tokens(client: TestClient, db_session: Session):
+    quote, rev0, agent, _ = setup_issued_quotation(db_session)
+    token = create_access_token(subject=agent.id, role=agent.role.value)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = client.post(f"/api/v1/agent/quotations/{quote.id}/revisions/{rev0.id}/share", headers=headers)
+    raw_token = resp.json()["raw_token"]
+    clean_quote_num = resp.json()["quotation_number"]
+
+    # 1. Existing /shared/{quotation_number}/{secure_token} format continues working
+    shared_num_pdf = client.get(f"/api/v1/public/quotations/{clean_quote_num}/{raw_token}/pdf")
+    assert shared_num_pdf.status_code == 200
+    assert shared_num_pdf.headers["content-type"] == "application/pdf"
+    assert len(shared_num_pdf.content) < 300 * 1024
+
+    # 2. Legacy /shared/{secure_token} format continues working
+    legacy_details = client.get(f"/api/v1/public/quotations/{raw_token}")
+    assert legacy_details.status_code == 200
+
+    legacy_pdf = client.get(f"/api/v1/public/quotations/{raw_token}/pdf")
+    assert legacy_pdf.status_code == 200
+    assert legacy_pdf.headers["content-type"] == "application/pdf"
+    assert len(legacy_pdf.content) < 300 * 1024

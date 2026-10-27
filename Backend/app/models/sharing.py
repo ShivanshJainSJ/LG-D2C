@@ -40,7 +40,9 @@ class QuotationShareLink(Base):
     __tablename__ = "quotation_share_links"
     __table_args__ = (
         Index("ix_quotation_share_links_token_hash", "token_hash", unique=True),
+        Index("ix_quotation_share_links_short_code", "short_code", unique=True),
         Index("ix_quotation_share_links_lookup", "token_hash", "is_revoked"),
+        Index("ix_quotation_share_links_short_lookup", "short_code", "is_revoked"),
         Index("ix_quotation_share_links_revision", "revision_id", "is_revoked"),
     )
 
@@ -48,6 +50,7 @@ class QuotationShareLink(Base):
     quotation_id = Column(String(36), ForeignKey("quotations.id", ondelete="CASCADE"), nullable=False, index=True)
     revision_id = Column(String(36), ForeignKey("quotation_revisions.id", ondelete="CASCADE"), nullable=False, index=True)
     token_hash = Column(String(64), nullable=False)
+    short_code = Column(String(32), nullable=True)
     created_by_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     is_revoked = Column(Boolean, default=False, nullable=False)
     revoked_at = Column(DateTime, nullable=True)

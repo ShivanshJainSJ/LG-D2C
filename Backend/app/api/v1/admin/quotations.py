@@ -4,12 +4,14 @@ from typing import List, Optional
 from datetime import datetime
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.dependencies import require_admin, log_audit_event
 from app.models.user import User
 from app.models.quotation import Quotation, QuotationRevision, QuotationItem, QuotationStatus
 from app.models.settings import CompanySettings
 from app.schemas.quotation import QuotationResponse, QuotationCancelRequest
 from app.services.document_service import DocumentService
+from app.services.quotation_artifact_service import QuotationArtifactService
 
 router = APIRouter(prefix="/admin/quotations", tags=["Admin Quotation Management"])
 
@@ -190,3 +192,46 @@ async def download_quotation_revision_png(
         media_type="image/png",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.post("/{quotation_id}/revisions/{revision_id}/repair-artifact")
+async def repair_quotation_revision_artifact(
+    quotation_id: str,
+    revision_id: str,
+    current_admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    """
+    Staging-only maintenance endpoint to regenerate a corrupted/broken quotation PDF artifact
+    without creating a new revision or altering share links.
+    Strictly forbidden in production.
+    """
+    env_lower = (settings.ENVIRONMENT or "").strip().lower()
+    if env_lower == "production":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Artifact repair is strictly forbidden in production. Please create a new quotation revision."
+        )
+
+    quotation = db.query(Quotation).filter(Quotation.id == quotation_id).first()
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    revision = db.query(QuotationRevision).filter(
+        QuotationRevision.id == revision_id,
+        QuotationRevision.quotation_id == quotation.id
+    ).first()
+    if not revision:
+        raise HTTPException(status_code=404, detail="Revision not found")
+
+    artifact, pdf_bytes, _ = await QuotationArtifactService.get_or_create_artifact(
+        db=db,
+        quotation=quotation,
+        revision=revision,
+        force_regenerate=True
+    )
+    return {
+        "status": "repaired",
+        "quotation_number": quotation.quotation_number,
+        "revision_number": revision.revision_number,
+        "byte_size": artifact.byte_size,
+        "sha256_hash": artifact.sha256_hash
+    }

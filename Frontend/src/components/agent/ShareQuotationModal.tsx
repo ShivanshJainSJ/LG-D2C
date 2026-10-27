@@ -39,6 +39,7 @@ export function ShareQuotationModal({
   const [error, setError] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [rawToken, setRawToken] = useState<string | null>(null);
+  const [shortCode, setShortCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeLinkExists, setActiveLinkExists] = useState(false);
 
@@ -58,12 +59,20 @@ export function ShareQuotationModal({
         setActiveLinkExists(true);
         setShareUrl(null);
         setRawToken(null);
-      } else if (res.is_new && res.raw_token) {
+        setShortCode(null);
+      } else if (res.is_new && (res.short_code || res.raw_token)) {
         setActiveLinkExists(false);
         const appBase = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
-        const fullUrl = `${appBase.replace(/\/$/, "")}/shared/${res.raw_token}`;
+        const cleanQuoteNum = (res.quotation_number || quotationNumber || "QUOTE")
+          .replace(/[^a-zA-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        const code = res.short_code || res.raw_token;
+        const fullUrl = res.share_url
+          ? `${appBase.replace(/\/$/, "")}${res.share_url}`
+          : `${appBase.replace(/\/$/, "")}/q/${cleanQuoteNum}/${code}`;
         setShareUrl(fullUrl);
         setRawToken(res.raw_token);
+        setShortCode(res.short_code || null);
         if (onLinkCreated) onLinkCreated();
       }
     } catch (err: any) {
@@ -81,8 +90,12 @@ export function ShareQuotationModal({
   };
 
   const handleDownloadPdf = () => {
-    if (!rawToken) return;
-    window.open(`/api/v1/public/quotations/${rawToken}/pdf`, "_blank");
+    const code = shortCode || rawToken;
+    if (!code) return;
+    const cleanQuoteNum = (quotationNumber || "QUOTE")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    window.open(`/q/${cleanQuoteNum}/${code}`, "_blank");
   };
 
   return (
