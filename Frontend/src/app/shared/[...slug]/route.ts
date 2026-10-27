@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ quotation_number: string; token: string }> }
+  context: { params: Promise<{ slug: string[] }> }
 ) {
-  const { quotation_number, token } = await context.params;
+  const { slug } = await context.params;
 
-  if (!token || token.trim().length < 16 || !quotation_number || !quotation_number.trim()) {
+  if (!slug || slug.length === 0 || slug.length > 2) {
     return renderQuotationUnavailableResponse();
   }
 
@@ -16,9 +16,31 @@ export async function GET(
     .trim()
     .replace(/\/+$/, "");
 
-  const cleanQuoteNum = encodeURIComponent(quotation_number.trim());
-  const cleanToken = encodeURIComponent(token.trim());
-  const targetUrl = `${backendUrl}/api/v1/public/quotations/${cleanQuoteNum}/${cleanToken}/pdf`;
+  let targetUrl: string;
+
+  if (slug.length === 2) {
+    // Pattern: /shared/{quotation_number}/{token}
+    const [quotationNumber, token] = slug;
+    if (
+      !quotationNumber ||
+      !quotationNumber.trim() ||
+      !token ||
+      token.trim().length < 8
+    ) {
+      return renderQuotationUnavailableResponse();
+    }
+    const cleanQuoteNum = encodeURIComponent(quotationNumber.trim());
+    const cleanToken = encodeURIComponent(token.trim());
+    targetUrl = `${backendUrl}/api/v1/public/quotations/${cleanQuoteNum}/${cleanToken}/pdf`;
+  } else {
+    // Pattern: /shared/{token}
+    const [token] = slug;
+    if (!token || token.trim().length < 8) {
+      return renderQuotationUnavailableResponse();
+    }
+    const cleanToken = encodeURIComponent(token.trim());
+    targetUrl = `${backendUrl}/api/v1/public/quotations/${cleanToken}/pdf`;
+  }
 
   const forwardHeaders: Record<string, string> = {
     Accept: "application/pdf",
